@@ -9,9 +9,9 @@
 
 #define MyAppName "SmartWashWidget"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "SmartWashWidget"
+#define MyAppPublisher "jsabrautzky-oss"
 #define MyAppExeName "SmartWashWidget.exe"
-#define MyAppWebsite ""
+#define MyAppWebsite "https://github.com/jsabrautzky-oss/SmartWashWidget"
 
 [Setup]
 ; AppId NICHT aendern - sie Identifiziert die Installation bei Updates/Deinstallation.
@@ -19,7 +19,9 @@ AppId={{9E4F2C8A-6B41-4B0E-9C44-4A8E7E9A11D7}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
-AppCopyright="Copyright 2026"
+AppCopyright="Copyright (c) 2026 jsabrautzky-oss - MIT"
+AppSupportURL={#MyAppWebsite}
+AppUpdatesURL={#MyAppWebsite}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
@@ -52,6 +54,7 @@ Name: "autostart"; Description: "Beim Windows-Start automatisch starten (Empfehl
 [Files]
 Source: "..\publish\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
