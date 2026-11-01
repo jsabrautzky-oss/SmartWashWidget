@@ -3,14 +3,14 @@
 [![Build](https://github.com/jsabrautzky-oss/SmartWashWidget/actions/workflows/build.yml/badge.svg)](https://github.com/jsabrautzky-oss/SmartWashWidget/actions/workflows/build.yml)
 ![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)
 
-A **Windows 11** desktop widget in a glassmorphism / Fluent Acrylic look that watches **your Samsung washer and dryer through the SmartThings API**: rotating drums with a water wave or with heat waves, a glowing progress bar with a percentage, remaining time and the current phase — live, from the tray, with no window in the taskbar.
+A **Windows 11** desktop widget in a glassmorphism / Fluent Acrylic look that watches **your Samsung washer and dryer through the SmartThings API**: rotating drums with a water wave or with heat waves, a glowing progress bar with a percentage, remaining time and the current phase — live, from the tray, with no window in the taskbar (a switch in the settings can show one).
 
 Connecting is **one click**: the widget fetches the official SmartThings CLI, opens the normal Samsung sign-in in your browser, and from then on keeps the access token valid entirely on its own — no personal access token to create, paste and renew. Built with C#/.NET 9 (WPF), **without a single NuGet package** (BCL only: `HttpClient`, `System.Text.Json`, GDI+ for the tray icon). All graphics and animations are drawn in code.
 
 Ready-to-run builds on the **[latest release](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** — both are the same self-contained win-x64 single-file EXE, so neither needs an installed .NET:
 
-* **`SmartWashWidget-Setup-1.0.0.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
-* **`SmartWashWidget-Portable-1.0.0-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
+* **`SmartWashWidget-Setup-1.1.0.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
+* **`SmartWashWidget-Portable-1.1.0-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
 
 ---
 
@@ -66,7 +66,10 @@ Without a stored token the widget starts immediately in **demo mode** with anima
 | **Progress** | Remaining time from `remainingTime` / `remainingTimeStr` / `completionTime`, the machine's reported `progress`, and the phase name (pre-wash, washing, rinsing, spinning, drying, cooling down) |
 | **Animations (60 FPS)** | Drum with paddles, water wave + beads while washing, heat bands + warm particles while drying, glowing progress bar with percentage |
 | **Tray icon** | Drawn programmatically, recoloured by connection state, menu with show/hide, live demo mode, acrylic blur, settings, exit |
-| **Settings window** | Samsung connection and device assignment, acrylic blur on/off, glass tint 0–100 % (default 0 %), size 70–150 %, lock position, always on top, hardware rounded corners, demo speed, interface language |
+| **Settings window** | Samsung connection and device assignment, acrylic blur on/off, glass tint 0–100 % (default 0 %), size 70–150 %, lock position, always on top, hardware rounded corners, demo speed, interface language, **start with Windows on/off**, **show in the taskbar on/off**, **update check on/off** |
+| **Start with Windows** | The switch writes (or removes) the value `"SmartWashWidget"` under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` — current user only, no administrator rights, no scheduled task. The registry is the single source of truth, so an autostart added by hand stays visible in the settings |
+| **Taskbar switch** | Default is no taskbar button; switched on, the widget gets one live, without a restart and without losing its acrylic blur, rounded corners or position |
+| **Update check** | `GET https://api.github.com/repos/jsabrautzky-oss/SmartWashWidget/releases/latest` five seconds after start and every four hours: a small badge in the widget header links to the release page, and nothing is displayed when the widget is already current — no installation, no background download, silent on network problems |
 | **Reliability** | Poll interval 20 s (running) / 45 s (right after a cycle ends) / 180 s (standby), error backoff 30–300 s, single-instance guard, `error.log` |
 
 ---
@@ -152,8 +155,8 @@ build_release.bat
 Result:
 
 * `publish\SmartWashWidget.exe` — one single EXE (win-x64, self-contained; needs no installed .NET)
-* `dist\SmartWashWidget-Setup-1.0.0.exe` — Inno Setup installer (when Inno Setup is installed)
-* `dist\SmartWashWidget-Portable-1.0.0-win-x64.zip` — portable version, built in any case
+* `dist\SmartWashWidget-Setup-1.1.0.exe` — Inno Setup installer (when Inno Setup is installed)
+* `dist\SmartWashWidget-Portable-1.1.0-win-x64.zip` — portable version, built in any case
 
 The installer offers:
 
@@ -164,7 +167,7 @@ The installer offers:
 
 ### Portable version (no installation, no administrator rights)
 
-`dist\SmartWashWidget-Portable-1.0.0-win-x64.zip` unpacks to one folder `SmartWashWidget-1.0.0` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
+`dist\SmartWashWidget-Portable-1.1.0-win-x64.zip` unpacks to one folder `SmartWashWidget-1.1.0` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
 
 * the same self-contained single-file build as in the installer, verified by its SHA-256 (see the release notes)
 * **no administrator rights**: nothing is written to Program Files or to the registry, and nothing is registered for uninstallation
@@ -285,6 +288,9 @@ Example (token shortened):
 | `window.roundedCorners` | rounded corners through DWM (`DWMWCP_ROUND`) plus a GDI window region that clips the blur to the corner radius |
 | `window.topmost` | widget always in front |
 | `window.positionLocked` | guard against moving it |
+| `window.showInTaskbar` | `false` (default) = no taskbar button; `true` = the widget shows one, applied live without a restart |
+| `runAtStartup` | mirrors the autostart entry under `HKCU\...\CurrentVersion\Run`; the registry itself decides, so an entry made by hand is recognised and kept |
+| `autoUpdateCheck` | `true` (default) = GitHub release check five seconds after start and every four hours, badge in the widget header |
 | `smartThings.tokenProtected` | the current access token, DPAPI-sealed as Base64 (CLI-managed or manual fallback token) |
 | `smartThings.useCliManagedToken` | `true` when the official SmartThings CLI maintains that token, including its automatic renewal |
 | `smartThings.tokenExpiresAtUtc` | ISO-8601 UTC expiry of the current token in expert OAuth mode; in CLI mode the expiry is read directly from the CLI credentials file |
@@ -421,7 +427,7 @@ run.bat --demo            :: look at the design
 build_release.bat         :: create EXE + installer + portable ZIP
 ```
 
-Version 1.0.0 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
+Version 1.1.0 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
 
 ---
 

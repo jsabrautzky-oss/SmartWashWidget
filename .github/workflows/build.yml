@@ -43,11 +43,15 @@ jobs:
 
       - name: Portable-Version paketieren
         run: |
-          New-Item -ItemType Directory -Force -Path dist/portable/SmartWashWidget-1.0.0 | Out-Null
-          Copy-Item publish/SmartWashWidget.exe dist/portable/SmartWashWidget-1.0.0
-          Copy-Item README.md dist/portable/SmartWashWidget-1.0.0
-          Copy-Item LICENSE dist/portable/SmartWashWidget-1.0.0
-          tar -a --format zip --options "compression-level=9" -c -f dist/SmartWashWidget-Portable-1.0.0-win-x64.zip -C dist/portable SmartWashWidget-1.0.0
+          $version = (Select-String -LiteralPath SmartWashWidget/SmartWashWidget.csproj -Pattern '<Version>([0-9.]+)</Version>').Matches[0].Groups[1].Value
+          "WIDGET_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "Version: $version"
+
+          New-Item -ItemType Directory -Force -Path "dist/portable/SmartWashWidget-$version" | Out-Null
+          Copy-Item publish/SmartWashWidget.exe "dist/portable/SmartWashWidget-$version"
+          Copy-Item README.md "dist/portable/SmartWashWidget-$version"
+          Copy-Item LICENSE "dist/portable/SmartWashWidget-$version"
+          tar -a --format zip --options "compression-level=9" -c -f "dist/SmartWashWidget-Portable-$version-win-x64.zip" -C dist/portable "SmartWashWidget-$version"
 
       - name: Single-File-Build als Artefakt hochladen
         uses: actions/upload-artifact@v7
@@ -60,5 +64,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: SmartWashWidget-portable-win-x64
-          path: dist/SmartWashWidget-Portable-1.0.0-win-x64.zip
+          path: dist/SmartWashWidget-Portable-*-win-x64.zip
           if-no-files-found: error

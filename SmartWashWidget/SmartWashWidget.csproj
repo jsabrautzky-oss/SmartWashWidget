@@ -23,7 +23,7 @@
     <!-- Der WinForms-Analyzer (WFO0003) moniert die DPI-Angaben im Manifest. Die DPI-Rekalibrierung
          uebernimmt hier aber WPF (Composition-Layer), das Manifest wird fuer pro Monitor-DPI benoetigt. -->
     <NoWarn>$(NoWarn);WFO0003</NoWarn>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Product>SmartWashWidget</Product>
     <Description>Windows 11 Glassmorphism Desktop-Widget fuer Samsung Waschmaschine und Trockner (SmartThings).</Description>
     <Company>jsabrautzky-oss</Company>

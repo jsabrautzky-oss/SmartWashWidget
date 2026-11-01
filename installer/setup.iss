@@ -1,5 +1,6 @@
 ;=============================================================================
-; SmartWashWidget 1.0.0 - Inno Setup Installation (Windows 11 x64)
+; SmartWashWidget - Inno Setup Installation (Windows 11 x64)
+; Die Version steht unten bei MyAppVersion (gleiche Zahl wie in der .csproj).
 ;
 ; Voraussetzung: zuvor build_release.bat ausfuehren, damit
 ; ..\publish\SmartWashWidget.exe existiert (Single-File, self-contained).
@@ -8,7 +9,7 @@
 ;=============================================================================
 
 #define MyAppName "SmartWashWidget"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "jsabrautzky-oss"
 #define MyAppExeName "SmartWashWidget.exe"
 #define MyAppWebsite "https://github.com/jsabrautzky-oss/SmartWashWidget"
