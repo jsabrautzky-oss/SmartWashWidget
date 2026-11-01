@@ -9,8 +9,8 @@ Connecting is **one click**: the widget fetches the official SmartThings CLI, op
 
 Ready-to-run builds on the **[latest release](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** — both are the same self-contained win-x64 single-file EXE, so neither needs an installed .NET:
 
-* **`SmartWashWidget-Setup-1.1.0.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
-* **`SmartWashWidget-Portable-1.1.0-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
+* **`SmartWashWidget-Setup-1.1.1.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
+* **`SmartWashWidget-Portable-1.1.1-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
 
 ---
 
@@ -155,8 +155,8 @@ build_release.bat
 Result:
 
 * `publish\SmartWashWidget.exe` — one single EXE (win-x64, self-contained; needs no installed .NET)
-* `dist\SmartWashWidget-Setup-1.1.0.exe` — Inno Setup installer (when Inno Setup is installed)
-* `dist\SmartWashWidget-Portable-1.1.0-win-x64.zip` — portable version, built in any case
+* `dist\SmartWashWidget-Setup-1.1.1.exe` — Inno Setup installer (when Inno Setup is installed)
+* `dist\SmartWashWidget-Portable-1.1.1-win-x64.zip` — portable version, built in any case
 
 The installer offers:
 
@@ -167,7 +167,7 @@ The installer offers:
 
 ### Portable version (no installation, no administrator rights)
 
-`dist\SmartWashWidget-Portable-1.1.0-win-x64.zip` unpacks to one folder `SmartWashWidget-1.1.0` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
+`dist\SmartWashWidget-Portable-1.1.1-win-x64.zip` unpacks to one folder `SmartWashWidget-1.1.1` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
 
 * the same self-contained single-file build as in the installer, verified by its SHA-256 (see the release notes)
 * **no administrator rights**: nothing is written to Program Files or to the registry, and nothing is registered for uninstallation
@@ -427,7 +427,7 @@ run.bat --demo            :: look at the design
 build_release.bat         :: create EXE + installer + portable ZIP
 ```
 
-Version 1.1.0 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
+Version 1.1.1 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
 
 ---
 
