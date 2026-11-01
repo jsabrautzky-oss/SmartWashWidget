@@ -7,7 +7,10 @@ A **Windows 11** desktop widget in a glassmorphism / Fluent Acrylic look that wa
 
 Connecting is **one click**: the widget fetches the official SmartThings CLI, opens the normal Samsung sign-in in your browser, and from then on keeps the access token valid entirely on its own — no personal access token to create, paste and renew. Built with C#/.NET 9 (WPF), **without a single NuGet package** (BCL only: `HttpClient`, `System.Text.Json`, GDI+ for the tray icon). All graphics and animations are drawn in code.
 
-Ready-to-install build: **[latest release — `SmartWashWidget-Setup-1.0.0.exe`](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** (Inno Setup, self-contained, no .NET installation needed).
+Ready-to-run builds on the **[latest release](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** — both are the same self-contained win-x64 single-file EXE, so neither needs an installed .NET:
+
+* **`SmartWashWidget-Setup-1.0.0.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
+* **`SmartWashWidget-Portable-1.0.0-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
 
 ---
 
@@ -37,7 +40,7 @@ Without a stored token the widget starts immediately in **demo mode** with anima
 * [Token validity through the SmartThings CLI](#token-validity-through-the-smartthings-cli)
 * [Quick start](#quick-start)
 * [Manual access with a personal access token](#manual-access-with-a-personal-access-token)
-* [Build, publish and installer](#build-publish-and-installer)
+* [Build, publish, installer and portable version](#build-publish-installer-and-portable-version)
 * [Application icon](#application-icon)
 * [Controls](#controls)
 * [Command-line arguments](#command-line-arguments)
@@ -131,7 +134,7 @@ The token is **never stored in clear text**: it sits encrypted with Windows DPAP
 
 ---
 
-## Build, publish and installer
+## Build, publish, installer and portable version
 
 ### Development / compiling
 
@@ -140,7 +143,7 @@ dotnet build SmartWashWidget\SmartWashWidget.csproj -c Debug
 SmartWashWidget\bin\Debug\net9.0-windows\win-x64\SmartWashWidget.exe --demo
 ```
 
-### Single-file version (no installed .NET required)
+### Release build: single file, installer and portable version
 
 ```bat
 build_release.bat
@@ -150,6 +153,7 @@ Result:
 
 * `publish\SmartWashWidget.exe` — one single EXE (win-x64, self-contained; needs no installed .NET)
 * `dist\SmartWashWidget-Setup-1.0.0.exe` — Inno Setup installer (when Inno Setup is installed)
+* `dist\SmartWashWidget-Portable-1.0.0-win-x64.zip` — portable version, built in any case
 
 The installer offers:
 
@@ -157,6 +161,17 @@ The installer offers:
 * Start Menu shortcut, optional desktop shortcut
 * optional task **"Start automatically with Windows"**
 * uninstallation that notes your personal configuration (and with it the encrypted token) is deliberately kept
+
+### Portable version (no installation, no administrator rights)
+
+`dist\SmartWashWidget-Portable-1.0.0-win-x64.zip` unpacks to one folder `SmartWashWidget-1.0.0` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
+
+* the same self-contained single-file build as in the installer, verified by its SHA-256 (see the release notes)
+* **no administrator rights**: nothing is written to Program Files or to the registry, and nothing is registered for uninstallation
+* configuration still lives in `%LOCALAPPDATA%\SmartWashWidget\config.json` (DPAPI-sealed token), so no personal data sits next to the EXE; the same `config.json` is shared with an installed version
+* autostart: place a shortcut to the EXE in the Autostart folder (`Win`+`R` → `shell:startup`)
+* the single-instance guard stays active, so a portable and an installed version do not run side by side
+* removing the folder removes the program completely — only `%LOCALAPPDATA%\SmartWashWidget` (configuration and token) is left, which you can delete yourself
 
 Compiling only, without installer:
 
@@ -166,7 +181,7 @@ dotnet publish SmartWashWidget\SmartWashWidget.csproj -c Release -r win-x64 --se
 
 ### Building in the cloud (GitHub Actions)
 
-`.github\workflows\build.yml` builds on every push to `main`, on pull requests and on demand: widget and icon tool are compiled, then the same single-file build as `build_release.bat` runs. The result is attached to the run as the artifact **SmartWashWidget-win-x64**. The installer itself is created locally with `build_release.bat`; finished installers are published as assets on the [releases page](https://github.com/jsabrautzky-oss/SmartWashWidget/releases).
+`.github\workflows\build.yml` builds on every push to `main`, on pull requests and on demand: widget and icon tool are compiled, then the same single-file build as `build_release.bat` runs. Two artifacts are attached to the run: **`SmartWashWidget-win-x64`** (the contents of `publish\`) and **`SmartWashWidget-portable-win-x64`** (the portable ZIP). The installer itself is created locally with `build_release.bat`; finished installers and portable ZIPs are published as assets on the [releases page](https://github.com/jsabrautzky-oss/SmartWashWidget/releases).
 
 ---
 
@@ -385,13 +400,13 @@ SmartWashWidget/
   Interop/WindowBackdropHelper.cs blur on/off (accent policy), tint alpha 5..235, rounded window region (SetWindowRgn)
   Interop/AccentPolicy.cs        user32!SetWindowCompositionAttribute (focus-independent acrylic blur)
 run.bat                         start (uses publish/Release/Debug, builds it otherwise)
-build_release.bat               single-file publish + Inno Setup installer
+build_release.bat               single-file publish + Inno Setup installer + portable ZIP
 installer/setup.iss             Inno Setup script
 Assets/SmartWashWidget.ico      application icon (porthole) for EXE and installer
 Assets/preview/                 icon previews (blatt.png, icon-<size>.png)
 tools/icon-gen/                 icon generator (GDI+, parametric, without template image)
 Screenshots/                    preview GIFs and settings images for this README
-.github/workflows/build.yml     CI: compile + single-file publish as an artifact
+.github/workflows/build.yml     CI: compile + single-file publish + portable ZIP as artifacts
 LICENSE                         MIT license
 .editorconfig, .gitattributes   consistent indentation and line endings
 ```
@@ -403,7 +418,7 @@ LICENSE                         MIT license
 ```bat
 run.bat --settings        :: open the settings
 run.bat --demo            :: look at the design
-build_release.bat         :: create EXE + installer
+build_release.bat         :: create EXE + installer + portable ZIP
 ```
 
 Version 1.0.0 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).

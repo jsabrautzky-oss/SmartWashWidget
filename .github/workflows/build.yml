@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build:
-    name: Kompilieren und Single-File-Publish (Windows)
+    name: Kompilieren, Single-File-Publish und Portable-Version (Windows)
     runs-on: windows-latest
 
     steps:
@@ -41,9 +41,24 @@ jobs:
           -p:DebugSymbols=false
           -o publish
 
-      - name: Build als Artefakt hochladen
+      - name: Portable-Version paketieren
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/portable/SmartWashWidget-1.0.0 | Out-Null
+          Copy-Item publish/SmartWashWidget.exe dist/portable/SmartWashWidget-1.0.0
+          Copy-Item README.md dist/portable/SmartWashWidget-1.0.0
+          Copy-Item LICENSE dist/portable/SmartWashWidget-1.0.0
+          tar -a --format zip --options "compression-level=9" -c -f dist/SmartWashWidget-Portable-1.0.0-win-x64.zip -C dist/portable SmartWashWidget-1.0.0
+
+      - name: Single-File-Build als Artefakt hochladen
         uses: actions/upload-artifact@v7
         with:
           name: SmartWashWidget-win-x64
           path: publish/
+          if-no-files-found: error
+
+      - name: Portable-Version als Artefakt hochladen
+        uses: actions/upload-artifact@v7
+        with:
+          name: SmartWashWidget-portable-win-x64
+          path: dist/SmartWashWidget-Portable-1.0.0-win-x64.zip
           if-no-files-found: error
