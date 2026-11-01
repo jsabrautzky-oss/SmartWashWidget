@@ -13,7 +13,8 @@
     <!-- ==================== Widget: Kopf- und Fusszeile ==================== -->
     <sys:String x:Key="Str_BrandHeader">SAMSUNG SMARTTHINGS</sys:String>
     <sys:String x:Key="Str_AppName">SmartWashWidget</sys:String>
-    <sys:String x:Key="Str_FooterVersion">SmartWashWidget 1.0</sys:String>
+    <!-- {0} ist die eigene Programmversion aus &lt;Version&gt; der csproj. -->
+    <sys:String x:Key="Str_Fmt_FooterVersion">SmartWashWidget {0}</sys:String>
 
     <sys:String x:Key="Str_State_Demo">Demo-Modus</sys:String>
     <sys:String x:Key="Str_State_Live">Live &#xB7; SmartThings</sys:String>

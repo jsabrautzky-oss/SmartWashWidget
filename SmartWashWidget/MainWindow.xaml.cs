@@ -55,6 +55,9 @@ namespace SmartWashWidget
         private string? _footerNoteKey;
         private object?[] _footerNoteArgs = Array.Empty<object?>();
 
+        /// <summary>true, wenn die Fusszeile einen direkt gesetzten Text traegt (Fehlermeldung) statt eines Sprachschluessels.</summary>
+        private bool _footerIsRaw;
+
         /// <summary>Das im Hintergrund gefundene neuere Release (null = kein Hinweis sichtbar).</summary>
         private UpdateInfo? _updateInfo;
 
@@ -440,6 +443,7 @@ namespace SmartWashWidget
         {
             _footerNoteKey = null;
             _footerNoteArgs = Array.Empty<object?>();
+            _footerIsRaw = true;
             _footerText = text;
             FooterText.Text = text;
         }
@@ -449,6 +453,7 @@ namespace SmartWashWidget
         {
             _footerNoteKey = key;
             _footerNoteArgs = args ?? Array.Empty<object?>();
+            _footerIsRaw = false;
             UpdateFooterText();
         }
 
@@ -456,13 +461,18 @@ namespace SmartWashWidget
         {
             _footerNoteKey = null;
             _footerNoteArgs = Array.Empty<object?>();
+            _footerIsRaw = false;
             UpdateFooterText();
         }
 
+        /// <summary>
+        /// Fusszeile neu bauen: ein Hinweis aus seinem Sprachschluessel, sonst der Programmname
+        /// mit der eigenen Version aus &lt;Version&gt; der csproj - die Zahl steht nirgends fest geschrieben.
+        /// </summary>
         private void UpdateFooterText()
         {
             string text = _footerNoteKey is null
-                ? LocalizationManager.Get("Str_FooterVersion")
+                ? LocalizationManager.Format("Str_Fmt_FooterVersion", UpdateService.OwnDisplayVersion)
                 : LocalizationManager.Format("Str_Note_ConfigIssue",
                       LocalizationManager.Format(_footerNoteKey, _footerNoteArgs));
 
@@ -516,10 +526,12 @@ namespace SmartWashWidget
             if (_updateInfo is not null)
                 UpdateBadgeText.Text = LocalizationManager.Format("Str_Fmt_UpdateBadge", _updateInfo.Display);
 
-            if (_footerNoteKey is not null)
-                UpdateFooterText();
-            else
+            // Ein direkt gesetzter Text (Fehlermeldung) wird ueber den Rueckwaertsspeicher der
+            // alten Sprache geholt; die Versions-Fusszeile wird neu gerechnet (Version + aktive Sprache).
+            if (_footerIsRaw)
                 FooterText.Text = LocalizationManager.Relocalize(_footerText, previousLanguage);
+            else
+                UpdateFooterText();
 
             ApplyMenuTexts();
         }

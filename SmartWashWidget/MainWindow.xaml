@@ -122,8 +122,8 @@
 
             <!-- Fusszeile -->
             <Grid Grid.Row="2" Margin="14,2,14,12">
-                <!-- Beide Fusszeilentexte werden aus dem Code gesetzt (Sprachvorrat). -->
-                <TextBlock x:Name="FooterText" Text="{DynamicResource Str_FooterVersion}" FontSize="10"
+                <!-- Beide Fusszeilentexte werden aus dem Code gesetzt (Sprachvorrat + eigene Version). -->
+                <TextBlock x:Name="FooterText" Text="SmartWashWidget" FontSize="10"
                            Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
                 <TextBlock x:Name="BackdropText" Text="{DynamicResource Str_Glass_On}" FontSize="10"
                            Foreground="{StaticResource TextTertiaryBrush}"

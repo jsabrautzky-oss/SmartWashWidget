@@ -105,6 +105,12 @@ public sealed class UpdateService : IDisposable
     public Version CurrentVersion { get; } = ReadAssemblyVersion();
 
     /// <summary>
+    /// Die eigene Version als kurzer Text ("1.1.0") - statisch, damit die Fusszeile
+    /// die Zahl auch ohne erzeugten Update-Pruefer korrekt anzeigen kann.
+    /// </summary>
+    public static string OwnDisplayVersion { get; } = ShortVersion(ReadAssemblyVersion());
+
+    /// <summary>
     /// Feuert, wenn ein Check ein neueres Release gefunden hat. Kommt aus dem
     /// Hintergrund-Thread - die UI muss sich den Wert per Dispatcher holen.
     /// </summary>

@@ -12,7 +12,8 @@
     <!-- ==================== Widget: header and footer ==================== -->
     <sys:String x:Key="Str_BrandHeader">SAMSUNG SMARTTHINGS</sys:String>
     <sys:String x:Key="Str_AppName">SmartWashWidget</sys:String>
-    <sys:String x:Key="Str_FooterVersion">SmartWashWidget 1.0</sys:String>
+    <!-- {0} is the program version from &lt;Version&gt; in the csproj. -->
+    <sys:String x:Key="Str_Fmt_FooterVersion">SmartWashWidget {0}</sys:String>
 
     <sys:String x:Key="Str_State_Demo">Demo mode</sys:String>
     <sys:String x:Key="Str_State_Live">Live &#xB7; SmartThings</sys:String>
