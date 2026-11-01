@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Kompilieren und Single-File-Publish (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Repository holen
+        uses: actions/checkout@v4
+
+      - name: .NET 9 einrichten
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Widget kompilieren
+        run: dotnet build SmartWashWidget/SmartWashWidget.csproj -c Release
+
+      - name: Symbol-Werkzeug kompilieren
+        run: dotnet build tools/icon-gen/IconGen.csproj -c Release
+
+      - name: Single-File-Build veröffentlichen
+        run: >
+          dotnet publish SmartWashWidget/SmartWashWidget.csproj -c Release -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none
+          -p:DebugSymbols=false
+          -o publish
+
+      - name: Build als Artefakt hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartWashWidget-win-x64
+          path: publish/
+          if-no-files-found: error

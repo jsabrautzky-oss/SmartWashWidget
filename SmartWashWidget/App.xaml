@@ -1,0 +1,21 @@
+﻿<Application x:Class="SmartWashWidget.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnLastWindowClose">
+
+    <!-- Kein StartupUri: das Kompositionsroot erzeugt das Fenster selbst,
+         damit Konfiguration, Einzelinstanz und Tray vor dem Fenster starten. -->
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Win11Styles.xaml" />
+
+                <!-- Startsprache Deutsch: der LocalizationManager ersetzt genau dieses
+                     Dictionary bei jedem Sprachwechsel (alle {DynamicResource Str_...}
+                     ziehen dann ohne Neustart neu). Die Keys beider Sprachdateien sind
+                     identisch, deshalb bleibt jeder DynamicResource-Verweis gueltig. -->
+                <ResourceDictionary Source="Resources/Strings.de.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

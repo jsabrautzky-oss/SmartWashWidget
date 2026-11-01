@@ -1,0 +1,37 @@
+# Norm fuer dieses Repository:
+#   - Im Index (der gespeicherten Historie) stehen Textdateien immer mit LF.
+#   - Im Arbeitsverzeichnis bekommen Windows-Dateien CRLF, Quellcode LF.
+# Damit bleiben Diffs stabil, egal ob unter Windows, Linux oder in Containern gearbeitet wird.
+
+* text=auto eol=lf
+
+# Quellcode und Projektdateien: LF
+*.cs        text eol=lf
+*.csproj    text eol=lf
+*.xaml      text eol=lf
+*.manifest  text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.editorconfig text eol=lf
+.gitignore  text eol=lf
+LICENSE     text eol=lf
+
+# Windows-typische Dateien: CRLF im Arbeitsverzeichnis
+*.md        text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.iss       text eol=crlf
+
+# Nie umwandeln oder als Text behandeln
+*.ico       binary
+*.png       binary
+*.gif       binary
+*.jpg       binary
+*.jpeg      binary
+*.exe       binary
+*.zip       binary
+*.7z        binary
+
+# Spracheinordnung fuer die GitHub-Statistik
+*.xaml      linguist-language=XAML
+*.iss       linguist-language=Inno Setup

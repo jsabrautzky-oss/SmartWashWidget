@@ -1,0 +1,254 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ============================================================
+         DEUTSCHE UI-Texte fuer das SmartWashWidget.
+         Jeder Key beginnt mit Str_ (Phasen: Str_Phase_, Formate: Str_Fmt_).
+         Alle Umlaute als XML-Entities, damit die Datei ASCII bleibt.
+         Strings.en.xaml enthaelt exakt dieselben Keys in gleicher Reihenfolge.
+         ============================================================ -->
+
+    <!-- ==================== Widget: Kopf- und Fusszeile ==================== -->
+    <sys:String x:Key="Str_BrandHeader">SAMSUNG SMARTTHINGS</sys:String>
+    <sys:String x:Key="Str_AppName">SmartWashWidget</sys:String>
+    <sys:String x:Key="Str_FooterVersion">SmartWashWidget 1.0</sys:String>
+
+    <sys:String x:Key="Str_State_Demo">Demo-Modus</sys:String>
+    <sys:String x:Key="Str_State_Live">Live &#xB7; SmartThings</sys:String>
+    <sys:String x:Key="Str_State_Degraded">Live &#xB7; mit St&#xF6;rung</sys:String>
+    <sys:String x:Key="Str_State_Error">Verbindung getrennt</sys:String>
+    <sys:String x:Key="Str_State_Unknown">Bereit</sys:String>
+
+    <!-- ==================== Widget: Werkszeug-Tooltips ==================== -->
+    <sys:String x:Key="Str_Tooltip_Demo">Live-Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Tooltip_Settings">Einstellungen</sys:String>
+    <sys:String x:Key="Str_Tooltip_Hide">Widget ausblenden</sys:String>
+    <sys:String x:Key="Str_Tooltip_Close">Beenden</sys:String>
+
+    <!-- ==================== Glas /Backdrop ==================== -->
+    <sys:String x:Key="Str_Glass_On">Acryl-Blur an</sys:String>
+    <sys:String x:Key="Str_Glass_Off">Glasklar</sys:String>
+    <sys:String x:Key="Str_Glass_NotApplied">Glas-Hintergrund noch nicht angewendet.</sys:String>
+    <sys:String x:Key="Str_Glass_Prefix">Glas</sys:String>
+    <sys:String x:Key="Str_Glass_BlurActive">Milchglas-Blur aktiv (Accent-Policy, fokusunabhaengig)</sys:String>
+    <sys:String x:Key="Str_Glass_NoBlur">kein Blur &#xB7; glasklar durchsichtig</sys:String>
+    <sys:String x:Key="Str_Glass_DarkRejected">&#xB7; dunkler Rahmen abgelehnt</sys:String>
+    <sys:String x:Key="Str_Glass_CornersRejected">&#xB7; runde Ecken abgelehnt</sys:String>
+
+    <!-- ==================== Geraete: Namen, Status, Phasen ==================== -->
+    <sys:String x:Key="Str_Device_Washer">Waschmaschine</sys:String>
+    <sys:String x:Key="Str_Device_Dryer">Trockner</sys:String>
+    <sys:String x:Key="Str_Device_Generic">Ger&#xE4;t</sys:String>
+
+    <sys:String x:Key="Str_Status_Running">L&#xE4;uft</sys:String>
+    <sys:String x:Key="Str_Status_Paused">Pausiert</sys:String>
+    <sys:String x:Key="Str_Status_Finished">Fertig</sys:String>
+    <sys:String x:Key="Str_Status_Idle">Bereit</sys:String>
+    <sys:String x:Key="Str_Status_Offline">Offline</sys:String>
+    <sys:String x:Key="Str_Status_Unknown">Unbekannt</sys:String>
+
+    <sys:String x:Key="Str_Phase_prewash">Vorw&#xE4;sche</sys:String>
+    <sys:String x:Key="Str_Phase_wash">Waschen</sys:String>
+    <sys:String x:Key="Str_Phase_rinse">Sp&#xFC;len</sys:String>
+    <sys:String x:Key="Str_Phase_spin">Schleudern</sys:String>
+    <sys:String x:Key="Str_Phase_dry">Trocknen</sys:String>
+    <sys:String x:Key="Str_Phase_timedry">Trocknen</sys:String>
+    <sys:String x:Key="Str_Phase_cooldown">Abk&#xFC;hlen</sys:String>
+    <sys:String x:Key="Str_Phase_anticrease">Knitterschutz</sys:String>
+    <sys:String x:Key="Str_Phase_dehumidify">Entfeuchten</sys:String>
+    <sys:String x:Key="Str_Phase_preheat">Vorheizen</sys:String>
+    <sys:String x:Key="Str_Phase_finish">Fertig</sys:String>
+    <sys:String x:Key="Str_Phase_standby">Bereit</sys:String>
+    <sys:String x:Key="Str_Phase_pause">Pausiert</sys:String>
+    <sys:String x:Key="Str_Phase_offline">Offline</sys:String>
+
+    <!-- ==================== Karten: Hinweise, Restzeit ==================== -->
+    <sys:String x:Key="Str_Sub_SmartThings">SmartThings</sys:String>
+
+    <sys:String x:Key="Str_Hint_Connected">verbunden</sys:String>
+    <sys:String x:Key="Str_Hint_NoDevice">Kein Ger&#xE4;t konfiguriert.</sys:String>
+    <sys:String x:Key="Str_Hint_DemoActive">Live-Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Hint_DemoNoToken">Live-Demo &#xB7; Token in den Einstellungen hinterlegen</sys:String>
+    <sys:String x:Key="Str_Hint_NoTokenDemo">Kein Token hinterlegt &#xB7; Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Hint_NoSmartThingsToken">Kein SmartThings-Token &#xB7; Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Hint_EstimatedRemaining">Restzeit wird vom Ger&#xE4;t nicht &#xFC;bermittelt (gesch&#xE4;tzt).</sys:String>
+
+    <sys:String x:Key="Str_TimeUnknown">--:-- h</sys:String>
+    <sys:String x:Key="Str_TimeUnit">h</sys:String>
+
+    <!-- ==================== Kontextmenue (Rechtsklick) und Tray ==================== -->
+    <sys:String x:Key="Str_Menu_Settings">Einstellungen&#x2026;</sys:String>
+    <sys:String x:Key="Str_Menu_Demo">Live-Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Menu_Lock">Position sperren</sys:String>
+    <sys:String x:Key="Str_Menu_Blur">Milchglas-Blur (Acrylic)</sys:String>
+    <sys:String x:Key="Str_Menu_BlurOn">Milchglas-Blur (Acrylic)  an</sys:String>
+    <sys:String x:Key="Str_Menu_BlurOff">Milchglas-Blur (Acrylic)  aus</sys:String>
+    <sys:String x:Key="Str_Menu_Topmost">Immer im Vordergrund</sys:String>
+    <sys:String x:Key="Str_Menu_Hide">Widget ausblenden</sys:String>
+    <sys:String x:Key="Str_Menu_Show">Widget einblenden</sys:String>
+    <sys:String x:Key="Str_Menu_Reconnect">Neu verbinden</sys:String>
+    <sys:String x:Key="Str_Menu_Quit">Beenden</sys:String>
+
+    <sys:String x:Key="Str_Tray_Tooltip">SmartWashWidget - Waschmaschine &amp; Trockner</sys:String>
+    <sys:String x:Key="Str_Tray_BalloonText">Das Widget liegt im Tray - Doppelklick blendet es ein.</sys:String>
+
+    <!-- ==================== Einstellungsfenster: Kopf ==================== -->
+    <sys:String x:Key="Str_Settings_Title">SmartWashWidget &#x203A; Einstellungen</sys:String>
+    <sys:String x:Key="Str_Settings_Header">EINSTELLUNGEN</sys:String>
+    <sys:String x:Key="Str_Settings_Subtitle">Windows 11 Glas-Widget</sys:String>
+    <sys:String x:Key="Str_Settings_Build">Build</sys:String>
+    <sys:String x:Key="Str_Settings_HasBlur">Milchglas-Blur</sys:String>
+    <sys:String x:Key="Str_Settings_NoBlur">glasklar</sys:String>
+    <sys:String x:Key="Str_Tooltip_CloseSettings">Schlie&#xDF;en</sys:String>
+    <sys:String x:Key="Str_Settings_AutoSave">Alle &#xC4;nderungen werden sofort gespeichert.</sys:String>
+    <sys:String x:Key="Str_Settings_Done">Fertig</sys:String>
+
+    <!-- ==================== Abschnitt: Allgemein (Sprache) ==================== -->
+    <sys:String x:Key="Str_Section_General">ALLGEMEIN</sys:String>
+    <sys:String x:Key="Str_Language_Title">Sprache / Language</sys:String>
+    <sys:String x:Key="Str_Language_Hint">Die Sprache wird sofort umgeschaltet - ohne Neustart, auch f&#xFC;r Tray-Men&#xFC; und Statusmeldungen.</sys:String>
+    <sys:String x:Key="Str_LangAuto">Automatisch (System)</sys:String>
+    <sys:String x:Key="Str_LangDe">Deutsch</sys:String>
+    <sys:String x:Key="Str_LangEn">English</sys:String>
+
+    <!-- ==================== Abschnitt: Glas &amp; Aussehen ==================== -->
+    <sys:String x:Key="Str_Section_Glass">GLAS &amp; AUSSEHEN</sys:String>
+    <sys:String x:Key="Str_Blur_Title">Milchglas-Blur (Acrylic)</sys:String>
+    <sys:String x:Key="Str_Blur_Sub">An: echter Desktop-Blur &#x2013; Aus: 100 % glasklar durchsichtig</sys:String>
+    <sys:String x:Key="Str_Blur_StatusOn">Milchglas-Blur an: Windows 11 weichzeichnet den Desktop hinter dem Widget (Accent-Policy, bleibt auch ohne Fensterfokus aktiv). Die Acryl-Schicht selbst bleibt near-transparent (Alpha 0x01) - der graue Zwangs-Schleier bleibt aus.</sys:String>
+    <sys:String x:Key="Str_Blur_StatusOff">Milchglas-Blur aus: kein Blur und kein Windows-Material. Weil das Fenster AllowsTransparency=True nutzt, ist es jetzt zu 100 % glasklar durchsichtig - die Abdunkelung regelt allein der Slider 'Glas-T&#xF6;nung'.</sys:String>
+    <sys:String x:Key="Str_Tint_Title">Glas-T&#xF6;nung</sys:String>
+    <sys:String x:Key="Str_Tint_Hint1">0 % = freier Durchblick auf den Desktop, 100 % = stark abgedunkelt</sys:String>
+    <sys:String x:Key="Str_Tint_Hint2">Der Slider regelt allein die T&#xF6;nung des Glas-Grundes &#x2013; nicht den Blur.</sys:String>
+    <sys:String x:Key="Str_Scale_Title">Gr&#xF6;&#xDF;e</sys:String>
+    <sys:String x:Key="Str_Lock_Title">Position sperren</sys:String>
+    <sys:String x:Key="Str_Topmost_Title">Immer im Vordergrund</sys:String>
+    <sys:String x:Key="Str_Corners_Title">Hardware-runde Ecken</sys:String>
+
+    <!-- ==================== Abschnitt: Betrieb ==================== -->
+    <sys:String x:Key="Str_Section_Operation">BETRIEB</sys:String>
+    <sys:String x:Key="Str_Demo_Title">Live-Demo-Modus</sys:String>
+    <sys:String x:Key="Str_Demo_Sub">Animierte L&#xE4;ufe ohne Ger&#xE4;t</sys:String>
+    <sys:String x:Key="Str_Tempo_Title">Demo-Tempo</sys:String>
+
+    <!-- ==================== Abschnitt: Samsung SmartThings ==================== -->
+    <sys:String x:Key="Str_Section_SmartThings">SAMSUNG SMARTTHINGS</sys:String>
+
+    <sys:String x:Key="Str_OAuth_ConnectedTitle">Dauerhaft verbunden (Auto-Refresh aktiv)</sys:String>
+    <sys:String x:Key="Str_OAuth_ConnectedDetail">Dein Samsung-Konto ist eingebunden. Die Verbindung wird automatisch erneuert, deine Ger&#xE4;te kommen direkt aus dem Konto.</sys:String>
+    <sys:String x:Key="Str_OAuth_SessionMissingTitle">Nicht verbunden</sys:String>
+    <sys:String x:Key="Str_OAuth_SessionMissingDetail">Die Login-Sitzung fehlt. Ein Klick auf den Button stellt alles automatisch wieder her.</sys:String>
+    <sys:String x:Key="Str_OAuth_ManualTitle">Verbunden (manueller Token)</sys:String>
+    <sys:String x:Key="Str_OAuth_ManualDetail">Es ist nur ein manueller Token hinterlegt - ohne Auto-Refresh. F&#xFC;r eine dauerhafte Verbindung bitte den Assistenten nutzen.</sys:String>
+    <sys:String x:Key="Str_OAuth_NoneTitle">Nicht verbunden</sys:String>
+    <sys:String x:Key="Str_OAuth_NoneDetail">Noch kein Samsung-Konto verbunden. Ein Klick auf den Button richtet alles automatisch ein.</sys:String>
+
+    <sys:String x:Key="Str_Connect_Button">Jetzt mit Samsung SmartThings verbinden</sys:String>
+    <sys:String x:Key="Str_Connect_Redo">Konto neu verbinden</sys:String>
+    <sys:String x:Key="Str_Connect_Busy">Verbindet &#x2026;</sys:String>
+
+    <sys:String x:Key="Str_Devices_Hint">Die Ger&#xE4;tenamen stammen direkt aus deinem Samsung-Konto und werden beim Verbinden automatisch erkannt und vorausgew&#xE4;hlt.</sys:String>
+    <sys:String x:Key="Str_Combo_NoWasher">&#x2013; Keine Waschmaschine &#x2013;</sys:String>
+    <sys:String x:Key="Str_Combo_NoDryer">&#x2013; Kein Trockner &#x2013;</sys:String>
+
+    <!-- ==================== Experten-Einstellungen ==================== -->
+    <sys:String x:Key="Str_Expert_Header">Erweiterte Experten-Einstellungen</sys:String>
+    <sys:String x:Key="Str_Expert_Hint">Diese Werte sind fuer den normalen Betrieb nicht noetig. Aenderungen werden erst nach Klick auf &#x201A;Expertenwerte speichern&#x2018; uebernommen.</sys:String>
+    <sys:String x:Key="Str_Expert_ClientId">OAuth Client ID</sys:String>
+    <sys:String x:Key="Str_Expert_ClientSecret">OAuth Client Secret</sys:String>
+    <sys:String x:Key="Str_Expert_FallbackToken">Manueller Fallback-Token (Personal Access Token)</sys:String>
+    <sys:String x:Key="Str_Expert_WasherDeviceId">Waschmaschinen-Device-ID</sys:String>
+    <sys:String x:Key="Str_Expert_DryerDeviceId">Trockner-Device-ID</sys:String>
+    <sys:String x:Key="Str_Expert_Reveal">Geheimnisse anzeigen</sys:String>
+    <sys:String x:Key="Str_Expert_Save">Expertenwerte speichern</sys:String>
+    <sys:String x:Key="Str_Expert_Disconnect">Verbindung trennen</sys:String>
+    <sys:String x:Key="Str_Expert_OAuthSaved">OAuth-Zugangsdaten gespeichert &#xB7; DPAPI-verschluesselt.</sys:String>
+    <sys:String x:Key="Str_Expert_FallbackSaved">Fallback-Token gespeichert &#xB7; OAuth wird nicht mehr genutzt.</sys:String>
+    <sys:String x:Key="Str_Expert_Saved">Expertenwerte gespeichert &#xB7; werden sofort angewendet.</sys:String>
+    <sys:String x:Key="Str_Expert_NotSaved">Nicht gespeichert: {0}</sys:String>
+    <sys:String x:Key="Str_Expert_Disconnected">Verbindung getrennt &#xB7; das Widget laeuft im Demo-Modus weiter.</sys:String>
+    <sys:String x:Key="Str_OAuth_Disconnected">Verbindung getrennt.</sys:String>
+
+    <!-- ==================== Abschnitt: System ==================== -->
+    <sys:String x:Key="Str_Section_System">SYSTEM</sys:String>
+    <sys:String x:Key="Str_System_DemoMode">Demo-Modus &#xB7; animierte L&#xE4;ufe, keine Ger&#xE4;teabfrage.</sys:String>
+    <sys:String x:Key="Str_System_LiveMode">Live &#xB7; SmartThings-API (20 s bei Lauf, 180 s im Standby).</sys:String>
+    <sys:String x:Key="Str_Sync_None">-</sys:String>
+    <sys:String x:Key="Str_Sync_JustNow">{0} Uhr (gerade eben)</sys:String>
+    <sys:String x:Key="Str_Sync_MinutesAgo">{0} Uhr (vor {1} min)</sys:String>
+    <sys:String x:Key="Str_Sync_HoursAgo">{0} Uhr (vor {1} h)</sys:String>
+    <sys:String x:Key="Str_Sync_DaysAgo">{0} Uhr (vor {1} d)</sys:String>
+
+    <!-- ==================== OAuth-Assistent: Statustexte ==================== -->
+    <sys:String x:Key="Str_OAuth_Starting">Starte die Verbindung zu Samsung SmartThings &#x2026;</sys:String>
+    <sys:String x:Key="Str_OAuth_Download">Lade den Samsung-Einrichtungsassistenten herunter &#x2026;</sys:String>
+    <sys:String x:Key="Str_OAuth_DownloadDirect">Lade den Samsung-Einrichtungsassistenten direkt herunter &#x2026;</sys:String>
+    <sys:String x:Key="Str_OAuth_DownloadRetry">Download-Problem ({0}) - versuche naechste Quelle &#x2026;</sys:String>
+    <sys:String x:Key="Str_OAuth_BrowserLogin">Bitte melde dich im ge&#xF6;ffneten Browserfenster einmalig bei Samsung an &#x2026;</sys:String>
+    <sys:String x:Key="Str_OAuth_AssistantFailed">Der Samsung-Einrichtungsassistent ist gescheitert. {0}</sys:String>
+    <sys:String x:Key="Str_OAuth_NoDevices">In deinem SmartThings-Konto wurden keine Ger&#xE4;te gefunden.</sys:String>
+    <sys:String x:Key="Str_OAuth_TokenReadFailed">Der Samsung-Login konnte nicht ausgelesen werden. Bitte erneut versuchen.</sys:String>
+    <sys:String x:Key="Str_OAuth_Success">Erfolgreich verbunden! Waschmaschine und Trockner wurden automatisch eingerichtet.</sys:String>
+    <sys:String x:Key="Str_OAuth_DownloadFailed">Der Samsung-Einrichtungsassistent konnte nicht heruntergeladen werden. Bitte Internetverbindung pr&#xFC;fen und erneut versuchen.</sys:String>
+    <sys:String x:Key="Str_OAuth_ZipMissingExe">Die ZIP enth&#xE4;lt kein smartthings.exe.</sys:String>
+    <sys:String x:Key="Str_OAuth_AssistantMissing">Der Samsung-Einrichtungsassistent fehlt. Bitte in den Einstellungen neu verbinden.</sys:String>
+    <sys:String x:Key="Str_OAuth_StartFailed">Der Samsung-Einrichtungsassistent konnte nicht gestartet werden: {0}</sys:String>
+    <sys:String x:Key="Str_OAuth_StartFailedPlain">Der Samsung-Einrichtungsassistent konnte nicht gestartet werden.</sys:String>
+    <sys:String x:Key="Str_OAuth_Timeout">Der Samsung-Einrichtungsassistent hat zu lange nicht geantwortet (der Samsung-Login im Browser ist evtl. noch offen oder abgelaufen). Bitte erneut verbinden.</sys:String>
+    <sys:String x:Key="Str_OAuth_Cancelled">Die Verbindung wurde abgebrochen.</sys:String>
+    <sys:String x:Key="Str_OAuth_NotFinished">Verbindung nicht abgeschlossen: {0}</sys:String>
+    <sys:String x:Key="Str_OAuth_RefreshingUi">Verbindung hergestellt - aktualisiere die Anzeige &#x2026;</sys:String>
+
+    <!-- ==================== Automatische Geraetesuche ==================== -->
+    <sys:String x:Key="Str_Discover_None">Keine Ger&#xE4;te im SmartThings-Zugang gefunden.</sys:String>
+    <sys:String x:Key="Str_Discover_Manual">Ger&#xE4;te gefunden - bitte in den Einstellungen zuweisen.</sys:String>
+    <sys:String x:Key="Str_Discover_Failed">Ger&#xE4;tesuche fehlgeschlagen: {0}</sys:String>
+    <sys:String x:Key="Str_Err_NoAccess">Kein SmartThings-Zugang hinterlegt.</sys:String>
+
+    <!-- ==================== API-, Token- und Konfigurationsfehler ==================== -->
+    <sys:String x:Key="Str_Err_401">Zugriff abgelehnt (401): Token bitte pr&#xFC;fen oder erneuern.</sys:String>
+    <sys:String x:Key="Str_Err_403">Zugriff verweigert (403): Der Token hat nicht die bentigten Berechtigungen.</sys:String>
+    <sys:String x:Key="Str_Err_404">Ger&#xE4;t nicht gefunden (404): Device-ID korrigieren oder neu suchen lassen.</sys:String>
+    <sys:String x:Key="Str_Err_429">Zu viele Anfragen (429): Warte kurz.</sys:String>
+    <sys:String x:Key="Str_Err_Network">Netzwerkfehler: {0}</sys:String>
+    <sys:String x:Key="Str_Err_Api">API-Fehler {0}: {1}</sys:String>
+    <sys:String x:Key="Str_Err_NoAccessLive">Kein SmartThings-Zugang verf&#xFC;gbar. Bitte in den Einstellungen neu verbinden.</sys:String>
+    <sys:String x:Key="Str_Err_RefreshGone">Die automatische Token-Erneuerung ist nicht mehr moeglich. Bitte auf &#x201E;Jetzt mit Samsung SmartThings verbinden&#x201C; klicken.</sys:String>
+    <sys:String x:Key="Str_Err_RefreshRejected">Die automatische Token-Erneuerung wurde von Samsung abgelehnt. Bitte auf &#x201E;Jetzt mit Samsung SmartThings verbinden&#x201C; klicken.</sys:String>
+    <sys:String x:Key="Str_Err_RefreshFailed">Automatische Token-Erneuerung fehlgeschlagen: {0}</sys:String>
+    <sys:String x:Key="Str_Err_RefreshHttp">Automatische Token-Erneuerung fehlgeschlagen (HTTP {0}).</sys:String>
+    <sys:String x:Key="Str_Err_RefreshNoJson">Token-Erneuerung: Antwort war kein gueltiges JSON.</sys:String>
+    <sys:String x:Key="Str_Err_RefreshNoTokens">Token-Erneuerung: Antwort enthielt keine Tokens.</sys:String>
+    <sys:String x:Key="Str_Err_Timeout">Zeitueberschreitung beim Abruf.</sys:String>
+    <sys:String x:Key="Str_Err_ApiConnect">Keine Verbindung zu api.smartthings.com ({0}).</sys:String>
+    <sys:String x:Key="Str_Err_BadJson">Antwort war kein gueltiges JSON.</sys:String>
+    <sys:String x:Key="Str_Err_NoDeviceId">Keine Device-ID hinterlegt.</sys:String>
+    <sys:String x:Key="Str_Err_NoCapability">Das Ger&#xE4;t hat keine {0}-Anzeige. Anderes Ger&#xE4;t ausw&#xE4;hlen.</sys:String>
+    <sys:String x:Key="Str_Err_Unknown">unbekannter Fehler</sys:String>
+    <sys:String x:Key="Str_Err_Unexpected">Unerwarteter Fehler: {0}</sys:String>
+    <sys:String x:Key="Str_Polling_NoAccess">Kein SmartThings-Zugang hinterlegt - Live-API ist deaktiviert.</sys:String>
+    <sys:String x:Key="Str_Polling_StoppedSuffix">Polling gestoppt.</sys:String>
+
+    <sys:String x:Key="Str_Cfg_Unreadable">config.json war unlesbar - Standardeinstellungen genutzt.</sys:String>
+    <sys:String x:Key="Str_Cfg_LoadFailed">Konfiguration konnte nicht gelesen werden: {0}</sys:String>
+    <sys:String x:Key="Str_Cfg_SaveFailed">Konfiguration konnte nicht gespeichert werden: {0}</sys:String>
+    <sys:String x:Key="Str_Cfg_ResetFailed">config.json konnte nicht entfernt werden: {0}</sys:String>
+    <sys:String x:Key="Str_Cfg_TokenTooShort">Der Token wirkt zu kurz. Erwartet wird ein SmartThings Personal Access Token.</sys:String>
+    <sys:String x:Key="Str_Cfg_TokenUnprotect">Der gespeicherte Token konnte nicht entschluesselt (DPAPI) werden. DPAPI ist an das Windows-Benutzerkonto gebunden - Token bitte neu eingeben.</sys:String>
+    <sys:String x:Key="Str_Cfg_TokenError">Token-Fehler: {0}</sys:String>
+    <sys:String x:Key="Str_Note_ConfigIssue">Hinweis: {0}</sys:String>
+
+    <!-- ==================== Formatvorlagen ==================== -->
+    <sys:String x:Key="Str_Fmt_Percent">{0} %</sys:String>
+    <sys:String x:Key="Str_Fmt_TimeRemaining">{0} {1}</sys:String>
+    <sys:String x:Key="Str_Fmt_SubSmartThings">{0} &#xB7; SmartThings</sys:String>
+    <sys:String x:Key="Str_Fmt_SubDemo">{0} &#xB7; Demo</sys:String>
+    <sys:String x:Key="Str_Fmt_HeaderStatus">{0} &#xB7; {1} {2} &#xB7; {3}</sys:String>
+    <sys:String x:Key="Str_Fmt_GlassStatus">{0} &#xB7; {1} &#xB7; {2}{3}{4}</sys:String>
+    <sys:String x:Key="Str_Fmt_LastSync">Letzte Synchronisation: {0}</sys:String>
+    <sys:String x:Key="Str_Fmt_ConfigPath">Konfiguration: {0}</sys:String>
+    <sys:String x:Key="Str_Fmt_Tempo">{0}&#xD7;</sys:String>
+
+</ResourceDictionary>

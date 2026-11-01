@@ -1,0 +1,119 @@
+﻿<Window x:Class="SmartWashWidget.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SmartWashWidget"
+
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        AllowsTransparency="True"
+        ShowActivated="False"
+        Topmost="True"
+        SizeToContent="Manual"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        Width="348" Height="546">
+
+    <!-- Echte Glas-Architektur (bewusst OHNE WindowChrome, OHNE GlassFrameThickness,
+         OHNE DWMWA_SYSTEMBACKDROP_TYPE / Mica):
+         - AllowsTransparency="True" + Background="Transparent": alle Pixel ausserhalb der
+           gezeichneten Flaeche sind wirklich durchsichtig.
+         - Blur kommt ausschliesslich aus user32!SetWindowCompositionAttribute
+           (ACCENT_ENABLE_ACRYLICBLURBEHIND, GradientColor-Alpha fest 0x01 -> kein grauer Schleier).
+         - Abdunkelung kommt ausschliesslich aus DIESEM einen RootBorder-Hintergrund. -->
+    <Border x:Name="RootBorder"
+            Width="348" Height="546"
+            CornerRadius="8"
+            BorderThickness="1"
+            BorderBrush="{StaticResource SpecularBrushStrong}">
+
+        <Border.LayoutTransform>
+            <ScaleTransform x:Name="RootScale" ScaleX="1" ScaleY="1" />
+        </Border.LayoutTransform>
+
+        <!-- Einzig die Toenung: Alpha 5 (0 % Slider) ... 235 (100 % Slider), Farbe #0D111A.
+             Kein Verlauf, keine zweite Schicht - der Slider regelt genau diesen einen Wert. -->
+        <Border.Background>
+            <SolidColorBrush x:Name="TintBrush" Color="#050D111A" />
+        </Border.Background>
+
+        <!-- Clip + CornerRadius halten den Inhalt sauber in den abgerundeten Ecken, damit der
+             Blur nicht eckig ueber die Glasform hinausragt (zusaetzlich DWMWA_WINDOW_CORNER_PREFERENCE). -->
+        <Border.Clip>
+            <RectangleGeometry Rect="0,0,348,546" RadiusX="8" RadiusY="8" />
+        </Border.Clip>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- Glas-Sheen: NUR ein lichter Reflex oben (keine Abdunkelungs-Schicht, kein Beitrag
+                 zur "Glas-Toenung" - die sitzt allein im RootBorder-Hintergrund). -->
+            <Border Grid.RowSpan="3" CornerRadius="8" Background="{StaticResource GlassShineBrush}" IsHitTestVisible="False" />
+
+            <!-- Kopfzeile -->
+            <Grid Grid.Row="0" Margin="14,13,12,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="{DynamicResource Str_BrandHeader}"
+                               FontFamily="{StaticResource WidgetFontDisplay}"
+                               FontSize="10" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextTertiaryBrush}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <Ellipse x:Name="SyncDot" Width="7" Height="7" Fill="{StaticResource TextTertiaryBrush}"
+                                 Margin="0,0,6,0" VerticalAlignment="Center" />
+                        <!-- Der Verbindungstext kommt aus dem Code (SetConnectionState). -->
+                        <TextBlock x:Name="SyncText" Text="{DynamicResource Str_State_Unknown}" FontSize="10.5"
+                                   Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Explizite TextBlock-Symbole: der lokale FontFamily-Wert gewinnt gegen den
+                         impliziten TextBlock-Stil (Segoe UI), der sonst Segoe-UI-Tofu erzeugt. -->
+                    <Button x:Name="DemoButton" Style="{StaticResource GlyphButton}" ToolTip="{DynamicResource Str_Tooltip_Demo}"
+                            Click="DemoButton_Click">
+                        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE7E8;" FontSize="15"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                    </Button>
+                    <Button x:Name="SettingsButton" Style="{StaticResource GlyphButton}" ToolTip="{DynamicResource Str_Tooltip_Settings}"
+                            Click="SettingsButton_Click">
+                        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE713;" FontSize="15"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                    </Button>
+                    <Button x:Name="HideButton" Style="{StaticResource GlyphButton}" ToolTip="{DynamicResource Str_Tooltip_Hide}"
+                            Click="HideButton_Click">
+                        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE921;" FontSize="15"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                    </Button>
+                    <Button x:Name="CloseButton" Style="{StaticResource GlyphButton}" ToolTip="{DynamicResource Str_Tooltip_Close}"
+                            Click="CloseButton_Click">
+                        <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE8BB;" FontSize="14"
+                                   Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel x:Name="CardHost" Grid.Row="1" Margin="14,0,14,0" />
+
+            <!-- Fusszeile -->
+            <Grid Grid.Row="2" Margin="14,2,14,12">
+                <!-- Beide Fusszeilentexte werden aus dem Code gesetzt (Sprachvorrat). -->
+                <TextBlock x:Name="FooterText" Text="{DynamicResource Str_FooterVersion}" FontSize="10"
+                           Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                <TextBlock x:Name="BackdropText" Text="{DynamicResource Str_Glass_On}" FontSize="10"
+                           Foreground="{StaticResource TextTertiaryBrush}"
+                           HorizontalAlignment="Right" VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

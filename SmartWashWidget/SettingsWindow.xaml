@@ -1,0 +1,323 @@
+<Window x:Class="SmartWashWidget.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="{DynamicResource Str_Settings_Title}"
+
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="Transparent"
+        AllowsTransparency="False"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        SizeToContent="Manual"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        Width="452" Height="690">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome GlassFrameThickness="-1"
+                            ResizeBorderThickness="0"
+                            CaptionHeight="0"
+                            CornerRadius="0" />
+    </shell:WindowChrome.WindowChrome>
+
+    <Border x:Name="ShellBorder"
+            Width="452" Height="690"
+            CornerRadius="8"
+            BorderThickness="1"
+            BorderBrush="{StaticResource SpecularBrushStrong}">
+
+        <Border.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="0.3,1">
+                <GradientStop Color="#E8111620" Offset="0" />
+                <GradientStop Color="#F20A0D14" Offset="1" />
+            </LinearGradientBrush>
+        </Border.Background>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.RowSpan="3" CornerRadius="8" Background="{StaticResource GlassShineBrush}" IsHitTestVisible="False" />
+
+            <!-- Kopf: ziehbar -->
+            <Grid x:Name="HeaderBar" Grid.Row="0" Margin="16,14,12,10" MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{DynamicResource Str_Settings_Header}" FontFamily="{StaticResource WidgetFontDisplay}"
+                               FontSize="15" FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}" />
+                    <!-- Der Statustext der Kopfzeile kommt aus dem Code (ReflectState). -->
+                    <TextBlock x:Name="HeaderStatus" Text="{DynamicResource Str_Settings_Subtitle}" FontSize="10.5"
+                               Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0" />
+                </StackPanel>
+
+                <Button x:Name="CloseSettingsButton" Grid.Column="1" Style="{StaticResource GlyphButton}"
+                        ToolTip="{DynamicResource Str_Tooltip_CloseSettings}" Click="Close_Click">
+                    <TextBlock FontFamily="{StaticResource IconFont}" Text="&#xE8BB;" FontSize="14"
+                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
+                </Button>
+            </Grid>
+
+            <ScrollViewer Grid.Row="1" Margin="16,0,16,0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                <StackPanel>
+
+                    <!-- ================= Allgemein: Sprache ================= -->
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="{DynamicResource Str_Section_General}" />
+
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Str_Language_Title}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Language_Hint}" FontSize="10"
+                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                               Margin="0,1,0,0" TextWrapping="Wrap" MaxWidth="270" />
+                                </StackPanel>
+
+                                <ComboBox x:Name="LanguageCombo" Grid.Column="1" Width="150"
+                                          VerticalAlignment="Center"
+                                          SelectionChanged="LanguageCombo_Changed">
+                                    <ComboBoxItem Tag="auto" Content="{DynamicResource Str_LangAuto}" />
+                                    <ComboBoxItem Tag="de" Content="{DynamicResource Str_LangDe}" />
+                                    <ComboBoxItem Tag="en" Content="{DynamicResource Str_LangEn}" />
+                                </ComboBox>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ================= Glas &amp; Aussehen ================= -->
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="{DynamicResource Str_Section_Glass}" />
+
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Str_Blur_Title}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Blur_Sub}"
+                                               FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
+                                               Margin="0,1,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+
+                                <ToggleButton x:Name="BlurToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="BlurToggle_Changed" Unchecked="BlurToggle_Changed" />
+                            </Grid>
+
+                            <!-- Der Zustandstext unter dem Schalter kommt aus dem Code. -->
+                            <TextBlock x:Name="BackdropStatusText" Text="{DynamicResource Str_Blur_StatusOn}" FontSize="10.5"
+                                       Foreground="{StaticResource TextTertiaryBrush}" Margin="0,7,0,10"
+                                       TextWrapping="Wrap" />
+
+                            <Grid Margin="0,0,0,2">
+                                <TextBlock Text="{DynamicResource Str_Tint_Title}" FontSize="11.5" HorizontalAlignment="Left" />
+                                <TextBlock x:Name="TintValue" Text="0 %" FontSize="11.5" HorizontalAlignment="Right"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </Grid>
+                            <Slider x:Name="TintSlider" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05"
+                                    ValueChanged="TintSlider_ValueChanged" />
+                            <TextBlock Text="{DynamicResource Str_Tint_Hint1}"
+                                       FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0" />
+                            <TextBlock Text="{DynamicResource Str_Tint_Hint2}"
+                                       FontSize="10" Foreground="{StaticResource TextTertiaryBrush}" Margin="0,2,0,0" />
+
+                            <Grid Margin="0,10,0,2">
+                                <TextBlock Text="{DynamicResource Str_Scale_Title}" FontSize="11.5" HorizontalAlignment="Left" />
+                                <TextBlock x:Name="ScaleValue" Text="100 %" FontSize="11.5" HorizontalAlignment="Right"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </Grid>
+                            <Slider x:Name="ScaleSlider" Minimum="0.70" Maximum="1.50" SmallChange="0.02" LargeChange="0.10"
+                                    ValueChanged="ScaleSlider_ValueChanged" />
+
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str_Lock_Title}" FontSize="11.5" VerticalAlignment="Center" />
+                                <ToggleButton x:Name="LockToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="LockToggle_Changed" Unchecked="LockToggle_Changed" />
+                            </Grid>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str_Topmost_Title}" FontSize="11.5" VerticalAlignment="Center" />
+                                <ToggleButton x:Name="TopmostToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="TopmostToggle_Changed" Unchecked="TopmostToggle_Changed" />
+                            </Grid>
+
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{DynamicResource Str_Corners_Title}" FontSize="11.5" VerticalAlignment="Center" />
+                                <ToggleButton x:Name="CornerToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="CornerToggle_Changed" Unchecked="CornerToggle_Changed" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ================= Betrieb ================= -->
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="{DynamicResource Str_Section_Operation}" />
+
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource Str_Demo_Title}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Demo_Sub}" FontSize="10"
+                                               Foreground="{StaticResource TextTertiaryBrush}" Margin="0,1,0,0" />
+                                </StackPanel>
+                                <ToggleButton x:Name="DemoToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="DemoToggle_Changed" Unchecked="DemoToggle_Changed" />
+                            </Grid>
+
+                            <Grid Margin="0,12,0,2">
+                                <TextBlock Text="{DynamicResource Str_Tempo_Title}" FontSize="11.5" HorizontalAlignment="Left" />
+                                <TextBlock x:Name="TempoValue" Text="4&#215;" FontSize="11.5" HorizontalAlignment="Right"
+                                           Foreground="{StaticResource TextSecondaryBrush}" />
+                            </Grid>
+                            <Slider x:Name="TempoSlider" Minimum="1" Maximum="20" SmallChange="1" LargeChange="2"
+                                    ValueChanged="TempoSlider_ValueChanged" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ================= Samsung SmartThings ================= -->
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="{DynamicResource Str_Section_SmartThings}" />
+
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <!-- Statusanzeige: gruener Punkt = dauerhaft verbunden (Texte kommen aus dem Code) -->
+                            <Grid Margin="0,0,0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Ellipse x:Name="OAuthStatusDot" Width="10" Height="10" VerticalAlignment="Center"
+                                         Margin="0,0,8,0" Fill="{StaticResource WarnBrush}" />
+                                <TextBlock x:Name="OAuthStatusTitle" Grid.Column="1"
+                                           Text="{DynamicResource Str_OAuth_NoneTitle}"
+                                           FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap" />
+                            </Grid>
+                            <TextBlock x:Name="OAuthStatusDetail" Text="{DynamicResource Str_OAuth_NoneDetail}"
+                                       FontSize="10.5" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextWrapping="Wrap" Margin="18,2,0,10" />
+
+                            <!-- Haupt-Button: 1-Klick-Setup -->
+                            <Button x:Name="ConnectButton" Style="{StaticResource AccentButton}"
+                                    Content="{DynamicResource Str_Connect_Button}"
+                                    Padding="12,10" Click="Connect_Click" />
+
+                            <!-- Fortschritts-/Statustext des Verbindungsaufbaus -->
+                            <TextBlock x:Name="OAuthProgressText" Text="" FontSize="10.5" TextWrapping="Wrap"
+                                       Foreground="{StaticResource TextTertiaryBrush}" Margin="0,9,0,4" />
+
+                            <!-- Einfache Geraete-Dropdowns -->
+                            <TextBlock Text="{DynamicResource Str_Device_Washer}" FontSize="11.5" FontWeight="SemiBold" Margin="0,6,0,4" />
+                            <ComboBox x:Name="WasherCombo" SelectionChanged="WasherCombo_Changed" />
+
+                            <TextBlock Text="{DynamicResource Str_Device_Dryer}" FontSize="11.5" FontWeight="SemiBold" Margin="0,10,0,4" />
+                            <ComboBox x:Name="DryerCombo" SelectionChanged="DryerCombo_Changed" />
+
+                            <TextBlock Text="{DynamicResource Str_Devices_Hint}"
+                                       FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextWrapping="Wrap" Margin="0,6,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Erweiterte Experten-Einstellungen (standardmaessig eingeklappt) -->
+                    <Expander Header="{DynamicResource Str_Expert_Header}" IsExpanded="False" Margin="0,8,0,0">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Str_Expert_Hint}"
+                                       FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10" />
+
+                            <TextBlock Text="{DynamicResource Str_Expert_ClientId}" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
+                            <TextBox x:Name="OAuthClientIdBox" Margin="0,0,0,10" />
+
+                            <TextBlock Text="{DynamicResource Str_Expert_ClientSecret}" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
+                            <PasswordBox x:Name="OAuthClientSecretBox" Margin="0,0,0,4" />
+                            <TextBox x:Name="OAuthClientSecretReveal" Margin="0,0,0,4" Visibility="Collapsed" />
+
+                            <TextBlock Text="{DynamicResource Str_Expert_FallbackToken}" FontSize="10.5"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,4" />
+                            <PasswordBox x:Name="FallbackTokenBox" Margin="0,0,0,4" />
+                            <TextBox x:Name="FallbackTokenReveal" Margin="0,0,0,4" Visibility="Collapsed" />
+
+                            <UniformGrid Columns="2" Rows="1" Margin="0,6,0,4">
+                                <TextBlock Text="{DynamicResource Str_Expert_WasherDeviceId}" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" />
+                                <TextBlock Text="{DynamicResource Str_Expert_DryerDeviceId}" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" />
+                            </UniformGrid>
+                            <UniformGrid Columns="2" Rows="1" Margin="0,0,0,10">
+                                <TextBox x:Name="WasherDeviceIdBox" Margin="0,0,5,0" />
+                                <TextBox x:Name="DryerDeviceIdBox" Margin="5,0,0,0" />
+                            </UniformGrid>
+
+                            <CheckBox x:Name="RevealSecretsCheck" Content="{DynamicResource Str_Expert_Reveal}" FontSize="10.5"
+                                      Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,10"
+                                      Checked="RevealSecrets_Changed" Unchecked="RevealSecrets_Changed" />
+
+                            <UniformGrid Columns="2" Rows="1">
+                                <Button x:Name="ExpertSaveButton" Content="{DynamicResource Str_Expert_Save}" Margin="0,0,5,0" Click="ExpertSave_Click" />
+                                <Button x:Name="DisconnectButton" Content="{DynamicResource Str_Expert_Disconnect}" Margin="5,0,0,0" Click="Disconnect_Click" />
+                            </UniformGrid>
+
+                            <TextBlock x:Name="ExpertStatusText" Text="" FontSize="10.5" TextWrapping="Wrap" Margin="0,10,0,0" />
+                        </StackPanel>
+                    </Expander>
+
+                    <!-- ================= System ================= -->
+                    <TextBlock Style="{StaticResource SectionHeader}" Text="{DynamicResource Str_Section_System}" />
+
+                    <Border Style="{StaticResource SectionCard}">
+                        <StackPanel>
+                            <!-- Alle vier Systemtexte werden aus dem Code gesetzt (Sprachvorrat). -->
+                            <TextBlock x:Name="ConnectionStatusText" Text="{DynamicResource Str_System_DemoMode}" FontSize="10.5"
+                                       Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock x:Name="GlassStatusText" Text="" FontSize="10.5"
+                                       Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock x:Name="LastSyncText" Text="{DynamicResource Str_Sync_None}" FontSize="10.5"
+                                       Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                            <TextBlock x:Name="ConfigPathText" Text="" FontSize="10"
+                                       Foreground="{StaticResource TextTertiaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <Grid Grid.Row="2" Margin="16,10,16,14">
+                <TextBlock Text="{DynamicResource Str_Settings_AutoSave}" FontSize="10"
+                           Foreground="{StaticResource TextTertiaryBrush}" VerticalAlignment="Center" />
+                <Button Content="{DynamicResource Str_Settings_Done}" Style="{StaticResource AccentButton}"
+                        HorizontalAlignment="Right" Click="Close_Click" Padding="14,6" />
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

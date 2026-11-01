@@ -1,0 +1,28 @@
+# Bau- und Entwickler-Artefakte
+bin/
+obj/
+publish/
+dist/
+TestResults/
+artifacts/
+*.binlog
+*.cache
+*.tmp
+*.orig
+*.rej
+
+# IDE
+.vs/
+*.user
+*.suo
+*.DotSettings.user
+
+# Laufzeit-Zustand
+error.log
+*.log
+
+# Persoenliche Zugangsdaten - niemals ins Repository
+*Token*
+*.pat
+SmartThings*Token*.txt
+Samsung SmartThings Token full Acce.txt

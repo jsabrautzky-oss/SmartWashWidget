@@ -1,0 +1,31 @@
+# Einheiten fuer alle Editoren. Passt zu den vorhandenen Dateien dieses Projekts:
+# C#/XAML mit 4 Leerzeichen, Projekt- und Konfigurationsdateien mit 2 Leerzeichen,
+# Quellcode mit LF, Windows-Skripte und Inno-Setup mit CRLF.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{csproj,manifest,json,yml,yaml,config}]
+indent_size = 2
+
+[*.{bat,cmd}]
+end_of_line = crlf
+indent_size = 4
+
+[*.iss]
+end_of_line = crlf
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+csharp_new_line_before_open_brace = all
+csharp_prefer_braces = true:suggestion
+dotnet_sort_system_directives_first = true

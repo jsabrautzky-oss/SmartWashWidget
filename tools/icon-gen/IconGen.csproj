@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Werkzeug ausserhalb des Widgets: erzeugt Assets\SmartWashWidget.ico.
+       Laeuft mit "dotnet run" auf diesem Projekt (aus dem Projektstamm). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>IconGen</RootNamespace>
+    <AssemblyName>IconGen</AssemblyName>
+
+    <!-- System.Drawing (GDI+) ueber UseWindowsForms - wie im Widget selbst, kein NuGet. -->
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <AnalysisLevel>latest-minimum</AnalysisLevel>
+  </PropertyGroup>
+
+</Project>

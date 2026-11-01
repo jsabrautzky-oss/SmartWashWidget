@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>SmartWashWidget</RootNamespace>
+    <AssemblyName>SmartWashWidget</AssemblyName>
+
+    <UseWPF>true</UseWPF>
+    <!-- NotifyIcon (System.Windows.Forms) ohne externe NuGet-Pakete -->
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <Nullable>enable</Nullable>
+    <!-- Absichtlich deaktiviert: mit UseWPF + UseWindowsForms wurden sonst
+         Application / Color / Orientation global mehrdeutig. Alle Usings sind explizit. -->
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Programm-Symbol fuer EXE, Taskleiste, Verknuepfungen und Installer.
+        Master liegt im Projektstamm unter Assets, erzeugt von tools\icon-gen. -->
+    <ApplicationIcon>..\Assets\SmartWashWidget.ico</ApplicationIcon>
+    <!-- Der WinForms-Analyzer (WFO0003) moniert die DPI-Angaben im Manifest. Die DPI-Rekalibrierung
+         uebernimmt hier aber WPF (Composition-Layer), das Manifest wird fuer pro Monitor-DPI benoetigt. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+    <Version>1.0.0</Version>
+    <Product>SmartWashWidget</Product>
+    <Description>Windows 11 Glassmorphism Desktop-Widget fuer Samsung Waschmaschine und Trockner (SmartThings).</Description>
+    <Company>jsabrautzky-oss</Company>
+    <Authors>jsabrautzky-oss</Authors>
+    <Copyright>Copyright (c) 2026 jsabrautzky-oss - MIT-Lizenz</Copyright>
+
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <AnalysisLevel>latest-minimum</AnalysisLevel>
+    <DebugType>portable</DebugType>
+    <Deterministic>true</Deterministic>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+    <!-- Single-File-Publish Defaults (werden von build_release.bat genutzt) -->
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Kein einziges NuGet-Paket: nur BCL (System.Text.Json, HttpClient, GDI+). -->
+  </ItemGroup>
+
+</Project>
