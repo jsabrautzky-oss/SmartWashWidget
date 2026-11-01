@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ namespace SmartWashWidget
         private TrayIconService? _tray;
         private PollingCoordinator? _polling;
         private DemoPump? _demoPump;
+        private UpdateService? _update;
 
         private bool _openSettingsAtStartup;
 
@@ -59,6 +61,9 @@ namespace SmartWashWidget
         public MainWindow? Widget => _main;
         public SettingsWindow? Settings => _settings;
         public TrayIconService? Tray => _tray;
+
+        /// <summary>Der GitHub-Update-Checker (null, solange er noch nicht erzeugt wurde).</summary>
+        public UpdateService? Updates => _update;
 
         public bool DemoMode => Config.DemoMode;
 
@@ -122,6 +127,13 @@ namespace SmartWashWidget
             // OAuth2: Access-Token im Hintergrund erneuern, bevor er ablaueft - auch wenn das
             // Widget tagelang ausgeschaltet war (Refresh passiert beim naechsten App-Start).
             StartOAuthBackgroundRefresh();
+
+            // Update-Check: 5 s nach dem Start das erste Mal, danach alle 4 h im Hintergrund.
+            StartUpdateChecks();
+
+            // Autostart-Spiegelung: der Run-Eintrag des Benutzers ist die Wahrheit, config.json
+            // fuehrt nur, was Windows beim naechsten Anmelden wirklich starten wuerde.
+            Config.RunAtStartup = AutostartService.IsEnabled();
 
             // "--settings" oeffnet das Einstellungsfenster direkt nach dem Start.
             if (_openSettingsAtStartup)
@@ -329,6 +341,104 @@ namespace SmartWashWidget
             }
         }
 
+        // ---------------- Update-Check (GitHub-Releases) ----------------
+
+        /// <summary>
+        /// Holt sich den Update-Pruefer (und haengt seinen Fund an die Fenster weiter).
+        /// </summary>
+        private UpdateService EnsureUpdateService()
+        {
+            if (_update is null)
+            {
+                _update = new UpdateService(_cfg);
+                _update.UpdateFound += OnUpdateFound;
+            }
+
+            return _update;
+        }
+
+        /// <summary>
+        /// Startet die Hintergrund-Schleife: 5 s nach dem App-Start der erste Check, danach alle
+        /// 4 h. Die Option AutoUpdateCheck wird bei jedem Tick neu gelesen - wer sie in den
+        /// Einstellungen einschalaltet, wird also ohne Neustart wieder ueberprueft.
+        /// </summary>
+        private void StartUpdateChecks() => EnsureUpdateService().Start();
+
+        /// <summary>
+        /// Ein Check hat ein neueres Release gefunden. Kommt aus dem Hintergrund-Thread und
+        /// wandert ueber den Dispatcher in Widget-Badge und Einstellungsfenster.
+        /// </summary>
+        private void OnUpdateFound(UpdateInfo info)
+        {
+            if (info is null) return;
+
+            UI(() =>
+            {
+                _main?.ShowUpdate(info);
+                _settings?.RefreshUpdateStatus();
+            });
+        }
+
+        /// <summary>
+        /// Einzelner Check von Hand (Button "Nach Updates suchen"). Liefert das Ergebnis -
+        /// Netzwerkstoerungen kommen als UpdateCheckStatus.Failed zurueck, nie als Ausnahme.
+        /// </summary>
+        public async Task<UpdateCheckResult> CheckForUpdatesNowAsync()
+        {
+            UpdateService update = EnsureUpdateService();
+            return await update.CheckAsync(CancellationToken.None);
+        }
+
+        /// <summary>
+        /// Option "Automatisch nach Updates suchen" an/aus: speichern, und beim Einschalten sofort
+        /// einmal pruefen (sonst wuerde der naechste Tick bis zu 4 Stunden auf sich warten lassen).
+        /// </summary>
+        public void SetAutoUpdateCheck(bool enabled)
+        {
+            if (Config.AutoUpdateCheck == enabled) return;
+
+            Config.AutoUpdateCheck = enabled;
+            SaveConfig();
+
+            EnsureUpdateService();
+
+            if (enabled)
+                _ = CheckOnceAsync();
+        }
+
+        /// <summary>Sofort-Check aus den Einstellungen: Badge und Statuszeile nachziehen.</summary>
+        private async Task CheckOnceAsync()
+        {
+            UpdateCheckResult result = await CheckForUpdatesNowAsync();
+
+            UI(() =>
+            {
+                if (result.Status == UpdateCheckStatus.UpdateAvailable && result.Info is not null)
+                    _main?.ShowUpdate(result.Info);
+
+                _settings?.RefreshUpdateStatus();
+            });
+        }
+
+        /// <summary>
+        /// Klick auf das Widget-Badge: oeffnet die Release-Seite des gefundenen Releases im
+        /// Standard-Browser (UseShellExecute, damit Windows den angemeldeten Browser waehlt).
+        /// </summary>
+        public void OpenLatestRelease()
+        {
+            UpdateInfo? info = _update?.Latest;
+            string target = info?.ReleaseUrl ?? UpdateService.ReleasesPageUrl;
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(target) { UseShellExecute = true });
+            }
+            catch
+            {
+                // Kein Browser zugeordnet oder URL abgelehnt: das Widget darf daran nicht scheitern.
+            }
+        }
+
         public void RestartPolling()
         {
             if (Config.DemoMode) return;
@@ -500,6 +610,9 @@ namespace SmartWashWidget
             _shuttingDown = true;
 
             try { _oauthRefreshCts.Cancel(); } catch { /* egal */ }
+
+            try { _update?.Dispose(); } catch { /* egal */ }
+            _update = null;
 
             try { _tray?.Dispose(); } catch { /* egal */ }
             _tray = null;

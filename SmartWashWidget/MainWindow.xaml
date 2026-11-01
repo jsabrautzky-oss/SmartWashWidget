@@ -57,13 +57,17 @@
             <Border Grid.RowSpan="3" CornerRadius="8" Background="{StaticResource GlassShineBrush}" IsHitTestVisible="False" />
 
             <!-- Kopfzeile -->
-            <Grid Grid.Row="0" Margin="14,13,12,8">
+            <Grid x:Name="HeaderGrid" Grid.Row="0" Margin="14,13,12,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Str_BrandHeader}"
                                FontFamily="{StaticResource WidgetFontDisplay}"
                                FontSize="10" FontWeight="SemiBold"
@@ -77,7 +81,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Explizite TextBlock-Symbole: der lokale FontFamily-Wert gewinnt gegen den
                          impliziten TextBlock-Stil (Segoe UI), der sonst Segoe-UI-Tofu erzeugt. -->
                     <Button x:Name="DemoButton" Style="{StaticResource GlyphButton}" ToolTip="{DynamicResource Str_Tooltip_Demo}"
@@ -101,6 +105,17 @@
                                    Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type Button}}}" />
                     </Button>
                 </StackPanel>
+
+                <!-- Update-Hinweis: erscheint nur, wenn der GitHub-Check ein neueres Release
+                     gefunden hat (ShowUpdate im Code-setzt Text und Sichtbarkeit). Ein Klick
+                     oeffnet die Release-Seite im Standard-Browser. -->
+                <Button x:Name="UpdateBadge" Grid.Row="1" Grid.ColumnSpan="2" Margin="0,1,0,0"
+                        Style="{StaticResource UpdateBadge}" HorizontalAlignment="Left"
+                        Visibility="Collapsed" ToolTip="{DynamicResource Str_Tooltip_Update}"
+                        Click="UpdateBadge_Click">
+                    <TextBlock x:Name="UpdateBadgeText" Text="" FontSize="10" FontWeight="SemiBold"
+                               FontFamily="Segoe UI Variable Text, Segoe UI" VerticalAlignment="Center" />
+                </Button>
             </Grid>
 
             <StackPanel x:Name="CardHost" Grid.Row="1" Margin="14,0,14,0" />

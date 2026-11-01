@@ -97,6 +97,69 @@
                                     <ComboBoxItem Tag="en" Content="{DynamicResource Str_LangEn}" />
                                 </ComboBox>
                             </Grid>
+
+                            <Border Height="1" Background="#1AFFFFFF" Margin="0,10,0,2" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Str_Update_AutoTitle}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Update_AutoHint}"
+                                               FontSize="10" Foreground="{StaticResource TextTertiaryBrush}"
+                                               Margin="0,1,0,0" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <CheckBox x:Name="AutoUpdateCheck" Grid.Column="1" VerticalAlignment="Center"
+                                          Foreground="{StaticResource TextSecondaryBrush}"
+                                          Checked="AutoUpdateCheck_Changed" Unchecked="AutoUpdateCheck_Changed" />
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="UpdateCheckButton" Grid.Column="0"
+                                        Content="{DynamicResource Str_Update_CheckNow}" Padding="10,5" FontSize="11"
+                                        VerticalAlignment="Center" Click="UpdateCheck_Click" />
+                                <TextBlock x:Name="UpdateStatusText" Grid.Column="1" Text="" Margin="10,0,0,0" FontSize="10.5"
+                                           Foreground="{StaticResource TextSecondaryBrush}" TextWrapping="Wrap"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+
+                            <Border Height="1" Background="#1AFFFFFF" Margin="0,10,0,2" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Str_Autostart_Title}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Autostart_Hint}" FontSize="10"
+                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                               Margin="0,1,0,0" TextWrapping="Wrap" MaxWidth="270" />
+                                </StackPanel>
+                                <ToggleButton x:Name="AutostartToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="AutostartToggle_Changed" Unchecked="AutostartToggle_Changed" />
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock Text="{DynamicResource Str_Taskbar_Title}" FontSize="11.5" />
+                                    <TextBlock Text="{DynamicResource Str_Taskbar_Hint}" FontSize="10"
+                                               Foreground="{StaticResource TextTertiaryBrush}"
+                                               Margin="0,1,0,0" TextWrapping="Wrap" MaxWidth="270" />
+                                </StackPanel>
+                                <ToggleButton x:Name="TaskbarToggle" Grid.Column="1" Style="{StaticResource ToggleSwitch}"
+                                              Checked="TaskbarToggle_Changed" Unchecked="TaskbarToggle_Changed" />
+                            </Grid>
                         </StackPanel>
                     </Border>
 

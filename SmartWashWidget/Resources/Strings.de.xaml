@@ -113,6 +113,22 @@
     <sys:String x:Key="Str_LangDe">Deutsch</sys:String>
     <sys:String x:Key="Str_LangEn">English</sys:String>
 
+    <sys:String x:Key="Str_Update_AutoTitle">Automatisch nach Updates suchen</sys:String>
+    <sys:String x:Key="Str_Update_AutoHint">Frage alle 4 Stunden beim GitHub-Repository nach einer neuen Version (5 s nach dem Start, danach im Hintergrund).</sys:String>
+    <sys:String x:Key="Str_Update_CheckNow">Nach Updates suchen</sys:String>
+    <sys:String x:Key="Str_Update_Busy">Pr&#xFC;fe&#8230;</sys:String>
+    <sys:String x:Key="Str_Update_NotChecked">Noch nicht gepr&#xFC;ft.</sys:String>
+    <sys:String x:Key="Str_Update_Failed">Pr&#xFC;fung fehlgeschlagen (kein Internet?).</sys:String>
+    <sys:String x:Key="Str_Tooltip_Update">Neueste Version im Browser anzeigen</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateUpToDate">Aktuell: v{0}</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateAvailable">Update v{0} verf&#xFC;gbar!</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateBadge">&#x2191; Update v{0}</sys:String>
+
+    <sys:String x:Key="Str_Autostart_Title">Mit Windows starten</sys:String>
+    <sys:String x:Key="Str_Autostart_Hint">Startet das Widget automatisch bei der Windows-Anmeldung (Eintrag im Autostart des aktuellen Benutzers - kein Dienst, keine Administrator-Rechte).</sys:String>
+    <sys:String x:Key="Str_Taskbar_Title">In Taskleiste anzeigen</sys:String>
+    <sys:String x:Key="Str_Taskbar_Hint">Zus&#xE4;tzlich ein Symbol in der Taskleiste - zum Anklicken und Minimieren, ohne Neustart.</sys:String>
+
     <!-- ==================== Abschnitt: Glas &amp; Aussehen ==================== -->
     <sys:String x:Key="Str_Section_Glass">GLAS &amp; AUSSEHEN</sys:String>
     <sys:String x:Key="Str_Blur_Title">Milchglas-Blur (Acrylic)</sys:String>

@@ -46,6 +46,12 @@ public sealed class WindowSettings
     public bool PositionLocked { get; set; }
     public bool RoundedCorners { get; set; } = true;
 
+    /// <summary>
+    /// true = das Widget zusaendlich als Knopf in der Taskleiste (WS_EX_APPWINDOW statt
+    /// WS_EX_TOOLWINDOW auf dem Fensterhandle). Wirkt sofort - ohne Neustart.
+    /// </summary>
+    public bool ShowInTaskbar { get; set; } = false;
+
     public double ClampScale() => Math.Clamp(Scale, 0.70, 1.50);
 
     /// <summary>Glas-Toenung 0.00 (freie Durchsicht) ... 1.00 (stark abgedunkelt).</summary>
@@ -120,6 +126,21 @@ public sealed class WidgetConfig
     /// der LocalizationManager tauscht damit alle Texte ohne Neustart aus.
     /// </summary>
     public string Language { get; set; } = "auto";
+
+    /// <summary>
+    /// Automatischer Update-Check gegen die offizielle GitHub-Releases-API: einmal 5 s nach
+    /// dem App-Start, danach alle 4 Stunden im Hintergrund. Fehlt der Wert in einer alten
+    /// config.json, greift dieser Standardwert true.
+    /// </summary>
+    public bool AutoUpdateCheck { get; set; } = true;
+
+    /// <summary>
+    /// "Mit Windows starten": Run-Eintrag des angemeldeten Benutzers
+    /// (HKCU\Software\Microsoft\Windows\CurrentVersion\Run). Der Registry-Wert ist die Wahrheit,
+    /// dieser Wert ist seine Spiegelung in config.json - abgeglichen von AutostartService.
+    /// Fehlt der Wert in einer alten config.json, greift dieser Standardwert false.
+    /// </summary>
+    public bool RunAtStartup { get; set; } = false;
 }
 
 /// <summary>Laedt/sichert die Konfiguration atomar und verschluesselt den SmartThings-Token.</summary>

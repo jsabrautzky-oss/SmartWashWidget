@@ -1,9 +1,11 @@
 using System;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 using SmartWashWidget.Controls;
 using SmartWashWidget.Interop;
@@ -31,6 +33,7 @@ namespace SmartWashWidget
         private bool? _appliedBlur;
         private bool? _appliedRounded;
         private double _appliedScale = double.NaN;
+        private bool? _appliedTaskbar;
 
         private bool _dragging;
         private ContextMenu? _menu;
@@ -51,6 +54,9 @@ namespace SmartWashWidget
         private string? _footerText;
         private string? _footerNoteKey;
         private object?[] _footerNoteArgs = Array.Empty<object?>();
+
+        /// <summary>Das im Hintergrund gefundene neuere Release (null = kein Hinweis sichtbar).</summary>
+        private UpdateInfo? _updateInfo;
 
         public MainWindow(App app)
         {
@@ -77,6 +83,10 @@ namespace SmartWashWidget
         public MachineCard WasherCard => _washerCard;
         public MachineCard DryerCard => _dryerCard;
 
+        /// <summary>true, wenn das Fenster gerade als Knopf in der Taskleiste steht (der echte Zustand auf dem Handle).</summary>
+        public bool IsInTaskbar
+            => _hwnd != IntPtr.Zero ? TaskbarStyle.IsShown(_hwnd) : _app.Config.Window.ShowInTaskbar;
+
         // ---------------- DWM / Glas ----------------
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -90,6 +100,7 @@ namespace SmartWashWidget
             RestorePosition();
             ApplyGlass(_app.Config.Window.AcrylicBlur);
             QueueCornerRegion();
+            ApplyTaskbarVisibility(live: false);
 
             // Groessen-, Skala- und DPI-wechseln verschieben die Grenze der abgerundeten Region.
             SizeChanged += (s, e) => QueueCornerRegion();
@@ -193,6 +204,7 @@ namespace SmartWashWidget
 
             ApplyTint(w.ClampTint());
             UpdateBackdropText();
+            ApplyTaskbarVisibility(live: true);
         }
 
         /// <summary>
@@ -209,6 +221,72 @@ namespace SmartWashWidget
                 WindowBackdropHelper.TintColorR,
                 WindowBackdropHelper.TintColorG,
                 WindowBackdropHelper.TintColorB);
+        }
+
+        // ---------------- Taskleiste ----------------
+
+        /// <summary>
+        /// "In Taskleiste anzeigen": ordnet das Fenster der Taskleiste zu oder entzieht es ihr -
+        /// live auf dem bestehenden Handle, ohne Neustart und ohne Blur/Region/Position zu verlieren.
+        ///
+        /// live=true (Schalter umgelegt): die Taskleiste von Windows 11 fuehrt ihre Knopfliste
+        /// selbst und sieht ein nachtraeglich gesetztes WS_EX_APPWINDOW nicht. Ihr Knopf entsteht,
+        /// wenn das Fenster sichtbar wird - also kurz verstecken, Stil umstellen, wieder zeigen.
+        /// live=false (beim Start): das Fenster ist noch nicht gezeigt, der Stil wirkt von selbst.
+        /// </summary>
+        public void ApplyTaskbarVisibility(bool live)
+        {
+            if (_hwnd == IntPtr.Zero) return;
+
+            EnsureWindowIcon();
+
+            bool show = _app.Config.Window.ShowInTaskbar;
+            if (_appliedTaskbar == show) return;
+
+            bool reRegister = live && show && IsVisible;
+
+            if (reRegister) Hide();
+
+            bool applied = TaskbarStyle.Apply(_hwnd, show);
+
+            if (reRegister) Show();
+
+            if (!applied) return;
+            _appliedTaskbar = show;
+
+            // Rahmenwechsel und erneutes Zeigen koennen die Accent-Policy verwischen: neu setzen.
+            if (_app.Config.Window.AcrylicBlur) AccentPolicy.EnableAcrylicBlur(_hwnd);
+            else AccentPolicy.Disable(_hwnd);
+
+            QueueCornerRegion();
+        }
+
+        /// <summary>
+        /// Symbol fuer Taskleisten-Knopf und Fensterliste: das Symbol der eigenen EXE
+        /// (ApplicationIcon, Assets\SmartWashWidget.ico). Ohne Window.Icon zeigt Windows ein
+        /// fremdes Standardsymbol - genau das irritiert in der Taskleiste.
+        /// </summary>
+        private void EnsureWindowIcon()
+        {
+            if (Icon is not null) return;
+
+            try
+            {
+                string? exe = Environment.ProcessPath;
+                if (string.IsNullOrWhiteSpace(exe) || !File.Exists(exe)) return;
+
+                using System.Drawing.Icon? associated = System.Drawing.Icon.ExtractAssociatedIcon(exe);
+                if (associated is null) return;
+
+                Icon = Imaging.CreateBitmapSourceFromHIcon(
+                    associated.Handle,
+                    Int32Rect.Empty,
+                    BitmapSizeOptions.FromEmptyOptions());
+            }
+            catch
+            {
+                // Ohne Symbol bleibt es beim Standardsymbol: reine Optik, kein Fehlerfall.
+            }
         }
 
         // ---------------- Position ----------------
@@ -398,6 +476,31 @@ namespace SmartWashWidget
             _dryerCard.SetSetupHint(hint);
         }
 
+        // ---------------- Update-Hinweis (GitHub-Release) ----------------
+
+        /// <summary>
+        /// Akzent-Pille in der Kopfzeile: zeigt die neu gefundene Version. Der Text wird aus dem
+        /// Sprachvorrat gebaut (Str_Fmt_UpdateBadge), damit er bei Sprachwechsel neu entsteht.
+        /// </summary>
+        public void ShowUpdate(UpdateInfo info)
+        {
+            if (info is null) return;
+
+            _updateInfo = info;
+            UpdateBadgeText.Text = LocalizationManager.Format("Str_Fmt_UpdateBadge", info.Display);
+            UpdateBadge.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>Update-Hinweis ausblenden (z. B. nachdem der Nutzer die Release-Seite geoeffnet hat).</summary>
+        public void HideUpdate()
+        {
+            _updateInfo = null;
+            UpdateBadge.Visibility = Visibility.Collapsed;
+        }
+
+        private void UpdateBadge_Click(object sender, RoutedEventArgs e) => _app.OpenLatestRelease();
+
+
         /// <summary>
         /// Sprachwechsel nachziehen: Karten, Kopfzeile, Fusszeile, Glas-Beschriftung und
         /// Kontextmenue bekommen die Texte der jetzt aktiven Sprache.
@@ -409,6 +512,9 @@ namespace SmartWashWidget
 
             SetConnectionState(_connection);
             UpdateBackdropText();
+
+            if (_updateInfo is not null)
+                UpdateBadgeText.Text = LocalizationManager.Format("Str_Fmt_UpdateBadge", _updateInfo.Display);
 
             if (_footerNoteKey is not null)
                 UpdateFooterText();

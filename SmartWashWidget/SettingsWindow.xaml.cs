@@ -30,6 +30,7 @@ namespace SmartWashWidget
 
         private bool _suppress;   // verhindert Rueckkopplung, solange ReflectState() die Regler setzt
         private bool _busy;       // ein Setup-/API-Aufruf laeuft gerade
+        private bool _updateBusy; // ein manuell angestossener Update-Check laeuft gerade
         private bool _parsed;     // erst nach abgeschlossenem XAML-Pars sind Regler-/Speicherlogik aktiv
         private bool _catalogLoaded;
         private IntPtr _hwnd = IntPtr.Zero;
@@ -136,6 +137,18 @@ namespace SmartWashWidget
                 // Das Sprach-Dropdown spiegelt die gespeicherte Sprache ("auto", "de" oder "en").
                 LanguageCombo.SelectedIndex = LanguageIndexOf(cfg.Language);
 
+                // Update-Option spiegeln (die Checkbox selbst, ohne ihren Handler auszuloesen).
+                AutoUpdateCheck.IsChecked = cfg.AutoUpdateCheck;
+
+                // Autostart: der Run-Eintrag des Benutzers ist die Wahrheit (und wird dabei
+                // ggf. auf einen verschobenen EXE-Pfad berichtigt) - config.json fuehrt nur nach.
+                bool autostart = AutostartService.IsEnabled();
+                AutostartToggle.IsChecked = autostart;
+                cfg.RunAtStartup = autostart;
+
+                // Taskleisten-Schalter spiegelt den echten Zustand auf dem Widget-Fenster.
+                TaskbarToggle.IsChecked = _app.Widget?.IsInTaskbar ?? cfg.Window.ShowInTaskbar;
+
                 // ---- Samsung SmartThings: Status + Buttonbeschriftung ----
                 AppConfigService svc = _app.ConfigService;
                 bool hasOAuth = svc.HasOAuthCredentials;
@@ -203,6 +216,7 @@ namespace SmartWashWidget
 
             SyncSecretReveal();
             UpdateConnectButtonState();
+            RefreshUpdateStatus();
 
             // Dropdowns sofort (synchron) aus der gespeicherten Auswahl fuellen, damit sie nie leer wirken.
             if (IsConnected() && WasherCombo.Items.Count == 0)
@@ -339,6 +353,123 @@ namespace SmartWashWidget
         /// <summary>Klare Ein-/Aus-Beschreibung fuer den Einstellungs-Text unter dem Schalter.</summary>
         private static string BlurDescription(bool acrylicBlur)
             => LocalizationManager.Get(acrylicBlur ? "Str_Blur_StatusOn" : "Str_Blur_StatusOff");
+
+        // ---------------- Update-Check ----------------
+
+        /// <summary>
+        /// Checkbox "Automatisch nach Updates suchen": speichern und sofort an die App weitergeben.
+        /// Beim Einschalten prueft die App gleich einmal, statt bis zu 4 h auf den naechsten Tick zu warten.
+        /// </summary>
+        private void AutoUpdateCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_suppress || !_parsed) return;
+
+            _app.SetAutoUpdateCheck(AutoUpdateCheck.IsChecked == true);
+        }
+
+        /// <summary>Button "Nach Updates suchen": ein einzelner Check von Hand, mit Statuszeile.</summary>
+        private async void UpdateCheck_Click(object sender, RoutedEventArgs e)
+        {
+            if (_updateBusy) return;
+
+            _updateBusy = true;
+            UpdateCheckButton.IsEnabled = false;
+            UpdateStatusText.Text = LocalizationManager.Get("Str_Update_Busy");
+            UpdateStatusText.Foreground = Brush("TextTertiaryBrush");
+
+            try
+            {
+                await _app.CheckForUpdatesNowAsync();
+            }
+            catch
+            {
+                // Der Pruefer wirft nie - sollte trotzdem etwas schiefgehen, bleibt das Fenster nutzbar.
+            }
+
+            _updateBusy = false;
+            UpdateCheckButton.IsEnabled = true;
+            RefreshUpdateStatus();
+        }
+
+        /// <summary>
+        /// Statuszeile und Checkbox aus dem Stand des Update-Pruefers: gefundenes Release gegen die
+        /// eigene Version (&lt;Version&gt; der csproj) vergleichen, Sprachtexte immer aktuell holen.
+        /// </summary>
+        public void RefreshUpdateStatus()
+        {
+            if (UpdateStatusText is null) return;
+
+            AutoUpdateCheck.IsChecked = _app.Config.AutoUpdateCheck;
+
+            UpdateService? svc = _app.Updates;
+            UpdateInfo? info = svc?.Latest;
+
+            if (svc is not null && info is not null && info.Version > svc.CurrentVersion)
+            {
+                UpdateStatusText.Text = LocalizationManager.Format("Str_Fmt_UpdateAvailable", info.Display);
+                UpdateStatusText.Foreground = Brush("AccentCyanBrush");
+            }
+            else if (info is not null)
+            {
+                UpdateStatusText.Text = LocalizationManager.Format(
+                    "Str_Fmt_UpdateUpToDate", svc?.CurrentDisplay ?? info.Display);
+                UpdateStatusText.Foreground = Brush("OkBrush");
+            }
+            else if (svc?.LastCheckFailed == true)
+            {
+                UpdateStatusText.Text = LocalizationManager.Get("Str_Update_Failed");
+                UpdateStatusText.Foreground = Brush("WarnBrush");
+            }
+            else
+            {
+                UpdateStatusText.Text = LocalizationManager.Get("Str_Update_NotChecked");
+                UpdateStatusText.Foreground = Brush("TextTertiaryBrush");
+            }
+        }
+
+        // ---------------- Autostart & Taskleiste ----------------
+
+        /// <summary>
+        /// "Mit Windows starten": schreibt bzw. loescht den Run-Eintrag des angemeldeten
+        /// Benutzers (HKCU\...\CurrentVersion\Run, Pfad der aktuell laufenden EXE). Ein
+        /// Fehlschlag (Rechte, Gruppenrichtlinie) setzt den Schalter auf den echten Zustand zurueck.
+        /// </summary>
+        private void AutostartToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_suppress || !_parsed) return;
+
+            bool wanted = AutostartToggle.IsChecked == true;
+            bool actual = AutostartService.SetEnabled(wanted) ? wanted : AutostartService.IsEnabled();
+
+            _app.Config.RunAtStartup = actual;
+            _app.SaveConfig();
+
+            if (actual != wanted)
+            {
+                _suppress = true;
+                AutostartToggle.IsChecked = actual;
+                _suppress = false;
+            }
+        }
+
+        /// <summary>
+        /// "In Taskleiste anzeigen": wirkt sofort auf dem Widget-Fenster, ohne dass das Handle
+        /// neu gebaut wuerde - Milchglas-Blur, abgerundete Region und Position bleiben erhalten.
+        /// </summary>
+        private void TaskbarToggle_Changed(object sender, RoutedEventArgs e)
+        {
+            if (_suppress || !_parsed) return;
+
+            _app.Config.Window.ShowInTaskbar = TaskbarToggle.IsChecked == true;
+            _app.ApplyWindowSettings();
+            _app.SaveConfig();
+
+            TaskbarToggle.IsChecked = _app.Widget?.IsInTaskbar ?? _app.Config.Window.ShowInTaskbar;
+
+            // Das Widget wurde fuer den Taskleisten-Knopf kurz versteckt und wieder gezeigt - dabei
+            // zieht es die Aktivierung an. Zurueck zu den Einstellungen, damit der Schalter bedienbar bleibt.
+            Activate();
+        }
 
         // ---------------- Glas-Regler ----------------
 

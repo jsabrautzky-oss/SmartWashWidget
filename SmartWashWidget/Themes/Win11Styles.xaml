@@ -132,6 +132,39 @@
         </Setter>
     </Style>
 
+    <!-- Update-Hinweis im Widgetkopf: kleine Akzent-Pille, nur sichtbar, wenn der
+         GitHub-Check ein neueres Release gefunden hat. Klick oeffnet die Release-Seite. -->
+    <Style x:Key="UpdateBadge" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="Background" Value="#2E00E5FF" />
+        <Setter Property="BorderBrush" Value="#5E00E5FF" />
+        <Setter Property="Foreground" Value="#FFEAFDFF" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="Bd"
+                            CornerRadius="7"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#4A00E5FF" />
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#8A00E5FF" />
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="#1C00E5FF" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Betonter Button (Primae) -->
     <Style x:Key="AccentButton" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
         <Setter Property="Background" Value="#3300E5FF" />

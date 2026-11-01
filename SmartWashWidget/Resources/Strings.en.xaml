@@ -112,6 +112,22 @@
     <sys:String x:Key="Str_LangDe">Deutsch</sys:String>
     <sys:String x:Key="Str_LangEn">English</sys:String>
 
+    <sys:String x:Key="Str_Update_AutoTitle">Automatically check for updates</sys:String>
+    <sys:String x:Key="Str_Update_AutoHint">Asks the GitHub repository for a new version every 4 hours (first check 5 s after start, then in the background).</sys:String>
+    <sys:String x:Key="Str_Update_CheckNow">Check for updates</sys:String>
+    <sys:String x:Key="Str_Update_Busy">Checking&#8230;</sys:String>
+    <sys:String x:Key="Str_Update_NotChecked">Not checked yet.</sys:String>
+    <sys:String x:Key="Str_Update_Failed">Check failed (no internet?).</sys:String>
+    <sys:String x:Key="Str_Tooltip_Update">Show the newest version in your browser</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateUpToDate">Up to date: v{0}</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateAvailable">Update v{0} available!</sys:String>
+    <sys:String x:Key="Str_Fmt_UpdateBadge">&#x2191; Update v{0}</sys:String>
+
+    <sys:String x:Key="Str_Autostart_Title">Start with Windows</sys:String>
+    <sys:String x:Key="Str_Autostart_Hint">Starts the widget automatically at Windows sign-in (an autostart entry for the current user - no service, no administrator rights).</sys:String>
+    <sys:String x:Key="Str_Taskbar_Title">Show in taskbar</sys:String>
+    <sys:String x:Key="Str_Taskbar_Hint">An extra icon in the taskbar - to click and minimize, no restart needed.</sys:String>
+
     <!-- ==================== Section: glass & appearance ==================== -->
     <sys:String x:Key="Str_Section_Glass">GLASS &amp; APPEARANCE</sys:String>
     <sys:String x:Key="Str_Blur_Title">Acrylic blur</sys:String>
