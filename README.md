@@ -1,76 +1,114 @@
 # SmartWashWidget
 
 [![Build](https://github.com/jsabrautzky-oss/SmartWashWidget/actions/workflows/build.yml/badge.svg)](https://github.com/jsabrautzky-oss/SmartWashWidget/actions/workflows/build.yml)
-![MIT-Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)
+![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)
 
-Ein Desktop-Widget für **Windows 11** im Glassmorphism-/Fluent-Acrylic-Look, das **Samsung Waschmaschine und Trockner** über die **SmartThings-API** beobachtet: rotierende Trommeln mit Wasserwelle bzw. Hitzewellen, Leucht-Fortschrittsbalken, Restzeit und aktuelle Phase — live, im Tray, ohne Fenster in der Taskleiste.
+A **Windows 11** desktop widget in a glassmorphism / Fluent Acrylic look that watches **your Samsung washer and dryer through the SmartThings API**: rotating drums with a water wave or with heat waves, a glowing progress bar with a percentage, remaining time and the current phase — live, from the tray, with no window in the taskbar.
 
-Gebaut mit C#/.NET 9 (WPF), **ohne ein einziges NuGet-Paket** (nur BCL: `HttpClient`, `System.Text.Json`, GDI+ für das Tray-Symbol). Alle Grafiken und Animationen werden im Code gezeichnet.
+Connecting is **one click**: the widget fetches the official SmartThings CLI, opens the normal Samsung sign-in in your browser, and from then on keeps the access token valid entirely on its own — no personal access token to create, paste and renew. Built with C#/.NET 9 (WPF), **without a single NuGet package** (BCL only: `HttpClient`, `System.Text.Json`, GDI+ for the tray icon). All graphics and animations are drawn in code.
+
+Ready-to-install build: **[latest release — `SmartWashWidget-Setup-1.0.0.exe`](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** (Inno Setup, self-contained, no .NET installation needed).
 
 ---
 
-## Vorschau
+## Preview
 
-Waschmaschine (Wasserwelle + Perlen) und Trockner (Hitzewellen + warme Partikel), jeweils im laufenden Betrieb:
+Washer (water wave + beads) and dryer (heat waves + warm particles), both while a cycle is running:
 
-| Waschmaschine | Trockner |
+| Washer | Dryer |
 |---|---|
-| ![Waschmaschine im Lauf](Screenshots/animate1.gif) | ![Trockner im Lauf](Screenshots/animate2.gif) |
+| ![Washer mid-cycle](Screenshots/animate1.gif) | ![Dryer mid-cycle](Screenshots/animate2.gif) |
 
-Das Einstellungsfenster — oben Sprache, Glas & Aussehen, unten Konto-Verbindung und Gerätezuordnung:
+The settings window — language and glass & appearance at the top, Samsung connection and device assignment at the bottom:
 
-| Glas & Aussehen | SmartThings-Zugang |
+| Glass & appearance | Samsung SmartThings access |
 |---|---|
-| ![Einstellungen: Glas und Aussehen](Screenshots/Settings1.png) | ![Einstellungen: Zugang und Geräte](Screenshots/Settings2.png) |
+| ![Settings: glass and appearance](Screenshots/Settings1.png) | ![Settings: connection and devices](Screenshots/Settings2.png) |
 
-Ohne Token läuft das Widget sofort im **Demo-Modus** mit animierten Schein-Läufen — die Vorschauen oben entstehen genau so.
-
----
-
-## Inhalt
-
-* [Vorschau](#vorschau)
-* [Funktionen](#funktionen)
-* [Schnellstart](#schnellstart)
-* [SmartThings-Token einrichten](#smartthings-token-einrichten)
-* [Build, Publish und Installer](#build-publish-und-installer)
-* [Programm-Symbol](#programm-symbol)
-* [Steuerung](#steuerung)
-* [Kommandozeilen-Argumente](#kommandozeilen-argumente)
-* [Konfigurationsdatei](#konfigurationsdatei)
-* [So funktioniert die Glasoptik](#so-funktioniert-die-glasoptik)
-* [Fehlerbehebung](#fehlerbehebung)
-* [Bekannte Grenzen](#bekannte-grenzen)
-* [Datenhaltung und Datenschutz](#datenhaltung-und-datenschutz)
-* [Projektstruktur](#projektstruktur)
-* [Lizenz](#lizenz)
+Without a stored token the widget starts immediately in **demo mode** with animated simulated cycles — the previews above were recorded exactly that way.
 
 ---
 
-## Funktionen
+## Contents
 
-| Bereich | Details |
+* [Preview](#preview)
+* [Features](#features)
+* [One-click connection to Samsung](#one-click-connection-to-samsung)
+* [Token validity through the SmartThings CLI](#token-validity-through-the-smartthings-cli)
+* [Quick start](#quick-start)
+* [Manual access with a personal access token](#manual-access-with-a-personal-access-token)
+* [Build, publish and installer](#build-publish-and-installer)
+* [Application icon](#application-icon)
+* [Controls](#controls)
+* [Command-line arguments](#command-line-arguments)
+* [Configuration file](#configuration-file)
+* [How the glass look works](#how-the-glass-look-works)
+* [Troubleshooting](#troubleshooting)
+* [Known limitations](#known-limitations)
+* [Data storage and privacy](#data-storage-and-privacy)
+* [Project structure](#project-structure)
+* [License](#license)
+
+---
+
+## Features
+
+| Area | Details |
 |---|---|
-| **Echte Daten** | `GET /v1/devices` und `GET /v1/devices/{id}/status` mit Bearer-Token, fehlertolerante JSON-Auswertung (auch `samsungce.*`- und `custom.*`-Capabilitys) |
-| **Automatische Geräte-Erkennung** | Waschmaschine und Trockner werden über Capabilitys gefunden und automatisch zugeordnet; bei mehreren Kandidaten hilft die Liste im Einstellungsfenster |
-| **Zustände** | `Läuft`, `Pausiert`, `Fertig`, `Bereit` (Standby-Glow), `Getrennt`/`Offline` |
-| **Fortschritt** | Restzeit aus `remainingTime`/`remainingTimeStr`/`completionTime`, gemeldetes `progress` der Maschine, Phasenname (Vorwäsche, Waschen, Spülen, Schleudern, Trocknen, Abkühlen) |
-| **Animationen (60 FPS)** | Trommel mit Paddeln, Wasserwelle + Perlen beim Waschen, Hitzebänder + warme Partikel beim Trocknen, Leucht-Fortschrittsbalken mit Prozentangabe |
-| **Tray-Symbol** | programmatisch gezeichnet, farblich nach Verbindungsstatus, Menü mit Ein-/Ausblenden, Demo-Modus, Milchglas-Blur, Einstellungen, Beenden |
-| **Einstellungsfenster** | Token, Gerätezuordnung, Milchglas-Blur (Acrylic) an/aus, Glas-Tönung 0–100 % (Standard 0 %), Skalierung 70–150 %, Position sperren, Immer im Vordergrund, abgerundete Ecken, Demo-Tempo |
-| **Zuverlässigkeit** | Poll-Intervall 20 s (laufend) / 45 s (direkt nach Laufende) / 180 s (Standby), Fehler-Backoff 30–300 s, Einzelinstanz-Schutz, `error.log` |
+| **One-click Samsung connection** | One click on **Connect with Samsung SmartThings now**: official Samsung sign-in in your browser, washer and dryer found and preselected automatically — no OAuth client ID, no client secret, no app registration, no token to paste |
+| **Token that stays valid** | Automatic renewal through the official SmartThings CLI: a check before every request (10-minute margin), one refresh-and-retry on HTTP 401, and an hourly background check that renews 12 hours ahead |
+| **Real data** | `GET /v1/devices` and `GET /v1/devices/{id}/status` with a bearer token, fault-tolerant JSON parsing (including `samsungce.*` and `custom.*` capabilities) |
+| **Automatic device discovery** | Washer and dryer are recognised through their capabilities and assigned automatically; when several candidates match, the drop-downs in the settings window pick the right one |
+| **States** | `Running`, `Paused`, `Finished`, `Ready` (standby glow), `Offline` — and `Connection lost` in the header when the access itself fails |
+| **Progress** | Remaining time from `remainingTime` / `remainingTimeStr` / `completionTime`, the machine's reported `progress`, and the phase name (pre-wash, washing, rinsing, spinning, drying, cooling down) |
+| **Animations (60 FPS)** | Drum with paddles, water wave + beads while washing, heat bands + warm particles while drying, glowing progress bar with percentage |
+| **Tray icon** | Drawn programmatically, recoloured by connection state, menu with show/hide, live demo mode, acrylic blur, settings, exit |
+| **Settings window** | Samsung connection and device assignment, acrylic blur on/off, glass tint 0–100 % (default 0 %), size 70–150 %, lock position, always on top, hardware rounded corners, demo speed, interface language |
+| **Reliability** | Poll interval 20 s (running) / 45 s (right after a cycle ends) / 180 s (standby), error backoff 30–300 s, single-instance guard, `error.log` |
 
 ---
 
-## Schnellstart
+## One-click connection to Samsung
+
+This is the intended way to connect the widget — and it is the foundation of the durable token validity. Open the settings (gear in the widget header, or the tray menu) and press **Connect with Samsung SmartThings now**. That single click does everything:
+
+1. **The official SmartThings CLI is fetched once.** The latest release of [`SmartThingsCommunity/smartthings-cli`](https://github.com/SmartThingsCommunity/smartthings-cli) is downloaded (ZIP with a direct-EXE fallback) and placed as `%LOCALAPPDATA%\SmartWashWidget\tools\smartthings.exe`. No separate installation, no administrator rights, nothing to configure.
+2. **The widget runs `smartthings.exe devices -j`.** The very first time, the CLI opens the official Samsung sign-in in your normal browser: sign in, approve access once, done. While it waits, the settings window shows *Please sign in to Samsung once in the browser window that opened …*
+3. **The token is taken over.** The CLI maintains its own OAuth2 access and refresh token in `%LOCALAPPDATA%\@smartthings\cli\Data\credentials.json`. The widget reads that access token, seals it with Windows DPAPI into its own `config.json` so its API client can use it, and records `useCliManagedToken: true`.
+4. **Washer and dryer are assigned automatically.** Devices are matched through their capabilities (`washerOperatingState`, `washerMode`, `washerCycle`, `custom.washerOperatingState` — `dryerOperatingState`, `dryerMode`, `dryerCycle`, `custom.dryerOperatingState`), their names are taken straight from your Samsung account, and demo mode ends. The header reads `Live · SmartThings`, and the settings panel turns green: **Always connected (auto-refresh active)**.
+
+No personal access token, no OAuth client ID, no client secret, no app registration in the SmartThings developer portal, no copy-and-paste of credentials. Because the assistant is Samsung's own CLI, the OAuth client behind the sign-in is Samsung's as well — the widget never embeds a secret of its own. It also stays a strictly read-only client and sends no commands to your machines.
+
+If something has to be redone, **Reconnect account** repeats the same single click; the tray menu offers **Reconnect** as well.
+
+---
+
+## Token validity through the SmartThings CLI
+
+A personal access token stops working the day its validity ends, and a manually configured OAuth setup breaks as soon as its refresh token is gone. Here the token is maintained by the official CLI and the widget keeps it alive automatically, with four independent safety nets:
+
+| Situation | What happens |
+|---|---|
+| Before every API request | `SmartThingsClient.EnsureAccessTokenAsync` reads the expiry from the CLI credentials file and, if it falls within the 10-minute margin (`DefaultRefreshMargin`), asks the CLI to list devices once — which makes the CLI renew its own OAuth2 token. No user interaction. |
+| On HTTP 401 | The request is refreshed once and retried: the CLI is asked to list devices again, the new access token is mirrored into `config.json`, and the call is repeated. |
+| Every hour in the background | `SmartThingsClient.RefreshIfExpiringAsync(…, 12 h, …)` renews the token twelve hours before it expires, so a machine that was switched off for days comes back connected and a long drying cycle never loses its data. |
+| In expert OAuth mode | With your own client ID and secret the widget refreshes directly against `POST https://api.smartthings.com/v1/oauth/token` with `grant_type=refresh_token`; the new access and refresh tokens are stored DPAPI-sealed immediately. |
+
+Those refreshes run silently: the CLI is started with `CreateNoWindow`, its stdin is closed immediately so no interactive prompt can ever hang, and a background refresh gives up quietly after three minutes instead of failing loudly. The mirrored token in `config.json` is only updated when it actually changed, and the file is always written atomically.
+
+If the session really is gone — the account was signed out of the CLI, the consent was revoked, or the password was changed — the header reads `Connection lost`, the settings panel says **Not connected · The sign-in session is missing. One click on the button restores everything automatically.**, and one click on **Connect with Samsung SmartThings now** sets the whole connection up again. In the rare case that Samsung refuses the renewal, the widget reports it plainly: *Automatic token renewal is no longer possible. Please click "Connect with Samsung SmartThings now".*
+
+---
+
+## Quick start
 
 ```bat
 run.bat
 ```
 
-`run.bat` benutzt den Single-File-Build in `publish\`, sonst den Release- oder Debug-Build und baut sonst selbst. Das Widget erscheint rechts oben auf dem Desktop (Position lässt sich per Ziehen an der Kopfzeile ändern).
+`run.bat` uses the single-file build in `publish\`, otherwise the release or debug build, and builds it itself if neither exists. The widget appears in the upper-right corner of the desktop (drag the header to move it).
 
-Ohne Token startet das Widget automatisch im **Demo-Modus** mit animierten Schein-Läufen — gut, um Design und Einstellungen anzuschauen:
+Without a token the widget starts automatically in **demo mode** with animated simulated cycles — ideal for looking at the design and the settings:
 
 ```bat
 run.bat --demo
@@ -78,122 +116,125 @@ run.bat --demo
 
 ---
 
-## SmartThings-Token einrichten
+## Manual access with a personal access token
 
-1. Auf <https://account.smartthings.com/tokens> ein **Personal Access Token** erzeugen (Scopes: *Read devices and commands* / *Read all device data*). Gültigkeit: beliebig, empfohlen „kein Ablauf“ für ein Widget.
-2. Widget starten → Zahnrad (Kopfzeile) oder Tray-Menü → **Einstellungen**.
-3. Token einfügen → **Speichern & prüfen**. Das Widget testet den Zugang, sucht die Geräte und ordnet Waschmaschine und Trockner automatisch zu.
-4. Ab jetzt läuft das Widget im Live-Modus (Header: `Live · SmartThings`).
+The one-click connection is the recommended route. A personal access token remains available as a fallback — for example on computers where the SmartThings CLI cannot be downloaded — and lives in the settings under **Advanced expert settings → Manual fallback token (personal access token)**:
 
-Der Token wird **nie im Klartext** gespeichert: er liegt mit Windows-DPAPI (CurrentUser, eigene Entropie) verschlüsselt in der eigenen `config.json` und ist nur für das eigene Windows-Benutzerkonto lesbar.
+1. Create a **Personal Access Token** at <https://account.smartthings.com/tokens> (scopes: *Read devices and commands* / *Read all device data*). Validity is your choice; "no expiry" is the practical option for a widget.
+2. Start the widget → gear in the header (or the tray menu) → **Settings** → open **Advanced expert settings**.
+3. Paste the token → **Save expert values**. The widget tests the access, searches the devices and assigns washer and dryer automatically (*Fallback token saved · OAuth is no longer used*).
+4. The widget now runs live (header: `Live · SmartThings`) and the panel reads **Connected (manual token) · Only a manual token is stored — without auto-refresh. Use the assistant for a permanent connection.**
+
+A manual fallback token has no refresh token, so it stays valid only until it expires or is revoked — which is exactly the point the CLI bridge removes. **Disconnect** in the expert settings clears the stored connection; the widget then continues in demo mode.
+
+The token is **never stored in clear text**: it sits encrypted with Windows DPAPI (scope `CurrentUser`, own entropy `SmartWashWidget.TokenScope.v1`) inside your own `config.json` and can only be decrypted by your own Windows account.
 
 ---
 
-## Build, Publish und Installer
+## Build, publish and installer
 
-### Entwicklung / Kompilieren
+### Development / compiling
 
 ```bat
 dotnet build SmartWashWidget\SmartWashWidget.csproj -c Debug
 SmartWashWidget\bin\Debug\net9.0-windows\win-x64\SmartWashWidget.exe --demo
 ```
 
-### Single-File-Version (kein installiertes .NET nötig)
+### Single-file version (no installed .NET required)
 
 ```bat
 build_release.bat
 ```
 
-Ergebnis:
+Result:
 
-* `publish\SmartWashWidget.exe` — eine einzige EXE (win-x64, self-contained; benötigt kein installiertes .NET)
-* `dist\SmartWashWidget-Setup-1.0.0.exe` — Inno-Setup-Installer (wenn Inno Setup installiert ist)
+* `publish\SmartWashWidget.exe` — one single EXE (win-x64, self-contained; needs no installed .NET)
+* `dist\SmartWashWidget-Setup-1.0.0.exe` — Inno Setup installer (when Inno Setup is installed)
 
-Der Installer bietet:
+The installer offers:
 
-* Ziel `%ProgramFiles%\SmartWashWidget`
-* Startmenü-Verknüpfung, optional Desktop-Verknüpfung
-* Optionale Aufgabe **„Beim Windows-Start automatisch starten“**
-* Deinstallation mit Hinweis, dass die persönliche Konfiguration (und damit das verschlüsselte Token) erhalten bleibt
+* target `%ProgramFiles%\SmartWashWidget`
+* Start Menu shortcut, optional desktop shortcut
+* optional task **"Start automatically with Windows"**
+* uninstallation that notes your personal configuration (and with it the encrypted token) is deliberately kept
 
-Nur kompilieren ohne Installer:
+Compiling only, without installer:
 
 ```bat
 dotnet publish SmartWashWidget\SmartWashWidget.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish
 ```
 
-### Build in der Cloud (GitHub Actions)
+### Building in the cloud (GitHub Actions)
 
-`.github\workflows\build.yml` baut bei jedem Push auf `main`, bei Pull Requests und auf Zuruf:
-Widget und Symbol-Werkzeug kompilieren, danach derselbe Single-File-Build wie `build_release.bat`.
-Das Ergebnis hängt als Artefakt **SmartWashWidget-win-x64** am Lauf (kein Download-Release, der Installer bleibt lokal).
+`.github\workflows\build.yml` builds on every push to `main`, on pull requests and on demand: widget and icon tool are compiled, then the same single-file build as `build_release.bat` runs. The result is attached to the run as the artifact **SmartWashWidget-win-x64**. The installer itself is created locally with `build_release.bat`; finished installers are published as assets on the [releases page](https://github.com/jsabrautzky-oss/SmartWashWidget/releases).
 
 ---
 
-## Programm-Symbol
+## Application icon
 
-Das Programmsymbol zeigt das runde Bullauge des Widgets: Trommel mit Mitnehmern, Wasserwelle und steigenden Partikeln, Akzent Eisblau.
+The application icon shows the widget's round porthole: drum with lifter paddles, water wave and rising particles, ice-blue accent.
 
-* Master: `Assets\SmartWashWidget.ico` — 16/24/32/48 px als 32-Bit-DIB mit AND-Maske, 64/128/256 px als PNG-Eintrag
-* Genutzt von `<ApplicationIcon>` in `SmartWashWidget.csproj` (EXE, Taskleiste, Explorer) und `SetupIconFile` in `installer\setup.iss`
+* Master file: `Assets\SmartWashWidget.ico` — 16/24/32/48 px as 32-bit DIB with AND mask, 64/128/256 px as PNG entries
+* Used by `<ApplicationIcon>` in `SmartWashWidget.csproj` (EXE, taskbar, Explorer) and `SetupIconFile` in `installer\setup.iss`
 
-Alle Größen auf hellem und dunklem Grund:
+Every size on a light and on a dark background:
 
-![Symbol in allen Größen](Assets/preview/blatt.png)
+![Icon in all sizes](Assets/preview/blatt.png)
 
-Einzelgrößen liegen als `Assets\preview\icon-<groesse>.png` (16, 24, 32, 48, 64, 128, 256 px) bereit.
+Individual sizes are available as `Assets\preview\icon-<size>.png` (16, 24, 32, 48, 64, 128, 256 px).
 
-Neu erzeugen (auch nach Designänderungen in `tools\icon-gen`):
+Regenerate it (also after design changes in `tools\icon-gen`):
 
 ```bat
 dotnet run --project tools\icon-gen -c Release
 ```
 
-Der Generator zeichnet ohne Bildvorlage: alle Proportionen werden als Anteil der Iconbreite gerechnet, jedes Motiv 8-fach überabgetastet und per 8×8-Blockmittelwert mit prämultipliziertem Alpha auf die Zielgröße verdichtet. Kleine Größen bekommen mehr Kontrast, breitgezeichnete Linien und Mitnehmer sowie weniger Partikel, damit das Symbol auch mit 16 px in der Taskleiste eindeutig nach Waschmaschine aussieht.
+The generator draws without any template image: every proportion is computed as a share of the icon width, each motif is rendered with 8× supersampling and condensed to the target size by an 8×8 block average with premultiplied alpha. Small sizes get more contrast, broader strokes and lifter paddles, and fewer particles, so the icon still clearly reads as a washing machine at 16 px in the taskbar.
 
-Das Tray-Symbol wird weiterhin zur Laufzeit von `Services\TrayIconService.cs` gezeichnet, weil es je Verbindungsstatus die Farbe wechselt.
+The tray icon is still drawn at runtime by `Services\TrayIconService.cs`, because it changes colour with the connection state.
 
 ---
 
-## Steuerung
+## Controls
 
-| Wo | Aktion |
+| Where | Action |
 |---|---|
-| Kopfzeile (ziehen) | Widget verschieben (Position wird gespeichert) |
-| Kopfzeile · Symbole | Demo/Live umschalten · Einstellungen · ausblenden (in den Tray) · beenden |
-| Rechter Mausklick auf das Widget | vollständiges Menü (ein-/ausblenden, Demo-Modus, Milchglas-Blur, Einstellungen, Beenden) |
-| Tray-Symbol, Doppelklick | Widget einblenden |
-| Tray-Symbol, Rechtsklick | Menü wie oben |
+| Header (drag) | Move the widget (the position is saved) |
+| Header · icons | toggle demo/live · settings · hide (into the tray) · exit |
+| Right click on the widget | full menu (show/hide, live demo mode, acrylic blur, settings, exit) |
+| Tray icon, double click | show the widget |
+| Tray icon, right click | menu as above |
 
-Das Widget hat **keinen Rand und keine Titelleiste**; die Kopfzeile ist Teil des eigenen Layouts und bleibt trotzdem per `DragMove()` verschiebbar.
+The widget has **no border and no title bar**; the header is part of its own layout and still movable through `DragMove()`.
 
 ---
 
-## Kommandozeilen-Argumente
+## Command-line arguments
 
-| Argument | Wirkung |
+| Argument | Effect |
 |---|---|
-| *(kein Argument)* | aus der Konfiguration: Live-Modus mit Token, sonst Demo-Modus |
-| `--demo` | Demo-Modus (animierte Schein-Läufe, keine API) |
-| `--live` | Live-Modus (SmartThings-API); ohne Token fällt das Widget auf Demo zurück |
-| `--settings` | Einstellungsfenster direkt nach dem Start öffnen |
-| `--reset` | Konfiguration auf Werkszustand zurücksetzen (Token wird verworfen) |
+| *(no argument)* | from the configuration: live mode with a token, otherwise demo mode |
+| `--demo` | demo mode (animated simulated cycles, no API) |
+| `--live` | live mode (SmartThings API); without a stored access the widget falls back to demo |
+| `--settings` | open the settings window directly after start |
+| `--reset` | reset the configuration to factory state (the stored access is discarded) |
 
 ---
 
-## Konfigurationsdatei
+## Configuration file
 
-Pfad:
+Path:
 
 ```
 %LOCALAPPDATA%\SmartWashWidget\config.json
 ```
 
-Beispiel (Token gekürzt):
+Example (token shortened):
 
 ```json
 {
   "configVersion": 1,
+  "language": "en",
   "window": {
     "left": 2178, "top": 34,
     "scale": 1.0,
@@ -204,11 +245,12 @@ Beispiel (Token gekürzt):
     "roundedCorners": true
   },
   "smartThings": {
-    "tokenProtected": "<DPAPI-verschlüsselter Token, Base64>",
+    "tokenProtected": "<DPAPI-sealed access token, Base64>",
+    "useCliManagedToken": true,
     "washerDeviceId": "28b801cc-…",
     "dryerDeviceId": "62398d14-…",
-    "washerLabel": "Waschmaschine",
-    "dryerLabel": "Trockner",
+    "washerLabel": "Washer",
+    "dryerLabel": "Dryer",
     "autoDiscover": true,
     "lastSyncUtc": "2026-10-31T15:21:58Z"
   },
@@ -217,149 +259,159 @@ Beispiel (Token gekürzt):
 }
 ```
 
-| Schlüssel | Bedeutung |
+| Key | Meaning |
 |---|---|
-| `window.left` / `top` | gespeicherte Widget-Position (Gerätepixel) |
-| `window.scale` | Gesamtskalierung, 0.70 – 1.50 |
-| `window.tintAlpha` | Glas-Tönung, 0.00 (freier Durchblick, Standard) – 1.00 (stark abgedunkelt) |
-| `window.acrylicBlur` | Milchglas-Blur (Acrylic) über die Accent-Policy: `true` = Desktop wird weichgezeichnet, `false` = glasklar durchsichtig |
-| `window.backdrop` (alt) | aus älteren Konfigurationen (`acrylic`/`mica`/`micaalt`/`none`): alles außer `none` wird zu `acrylicBlur=true`, wird nicht mehr geschrieben |
-| `window.roundedCorners` | abgerundete Ecken über DWM (`DWMWCP_ROUND`) plus GDI-Fensterregion, die den Blur auf den Eckradius beschnitten |
-| `window.topmost` | Widget immer im Vordergrund |
-| `window.positionLocked` | Sperre gegen Verschieben |
-| `smartThings.washerDeviceId` / `dryerDeviceId` | zugewiesene Geräte |
-| `smartThings.autoDiscover` | Geräte automatisch suchen, wenn keine IDs bekannt sind |
-| `demoTempo` | Demo-Geschwindigkeit, 1 – 24 (1 sehr langsam, 24 sehr schnell) |
+| `language` | interface language: `auto` (system language), `de` or `en` — applied instantly, no restart needed |
+| `window.left` / `top` | saved widget position (device pixels) |
+| `window.scale` | overall scaling, 0.70 – 1.50 |
+| `window.tintAlpha` | glass tint, 0.00 (clear view, default) – 1.00 (strongly darkened) |
+| `window.acrylicBlur` | acrylic blur of the desktop through the accent policy: `true` = desktop is softened, `false` = fully transparent |
+| `window.backdrop` (legacy) | from older configurations (`acrylic`/`mica`/`micaalt`/`none`): everything except `none` becomes `acrylicBlur=true`, and it is no longer written |
+| `window.roundedCorners` | rounded corners through DWM (`DWMWCP_ROUND`) plus a GDI window region that clips the blur to the corner radius |
+| `window.topmost` | widget always in front |
+| `window.positionLocked` | guard against moving it |
+| `smartThings.tokenProtected` | the current access token, DPAPI-sealed as Base64 (CLI-managed or manual fallback token) |
+| `smartThings.useCliManagedToken` | `true` when the official SmartThings CLI maintains that token, including its automatic renewal |
+| `smartThings.tokenExpiresAtUtc` | ISO-8601 UTC expiry of the current token in expert OAuth mode; in CLI mode the expiry is read directly from the CLI credentials file |
+| `smartThings.refreshTokenProtected`, `oauthClientIdProtected`, `oauthClientSecretProtected`, `oauthAppId` | only present in expert OAuth mode, always DPAPI-sealed (except the non-secret app ID) |
+| `smartThings.washerDeviceId` / `dryerDeviceId` | the assigned devices |
+| `smartThings.autoDiscover` | search for devices automatically when no IDs are known |
+| `demoTempo` | demo speed, 1 – 24 (1 very slow, 24 very fast) |
 
-Die Datei wird atomar geschrieben (Temporärdatei + `File.Replace`), damit ein Absturz sie nicht beschädigt.
+Empty keys are omitted when the file is written. The file is written atomically (temporary file plus `File.Replace`) so a crash cannot damage it.
 
 ---
 
-## So funktioniert die Glasoptik
+## How the glass look works
 
-Das Widget ist ein echtes Glas-Fenster: Alle Pixel außerhalb der gezeichneten Fläche sind wirklich
-durchsichtig; den weichen Durchblick liefert Windows selbst, nicht eine halbtransparent gemalte Ebene:
+The widget is a real glass window: every pixel outside the drawn area is genuinely transparent, and the soft view through it is provided by Windows itself, not by a half-transparent painted layer:
 
 1. `WindowStyle="None"`, `ResizeMode="NoResize"`, `ShowInTaskbar="False"`, **`AllowsTransparency="True"`**, `Background="Transparent"`
-   — der Bereich außerhalb des eigenen Layouts ist zu 100 % durchsichtig. Bewusst **kein** `WindowChrome`,
-   **kein** `GlassFrameThickness`, **kein** `DWMWA_SYSTEMBACKDROP_TYPE` (Mica / Mica Alt wären nahezu undurchsichtiges
-   Grau und verdichten sich ohne Fensterfokus noch zusätzlich).
-2. Der **Milchglas-Blur** ist fokusunabhängig und kommt ausschließlich aus `user32!SetWindowCompositionAttribute`:
-   * An  → `ACCENT_ENABLE_ACRYLICBLURBEHIND` (4), `AccentFlags = 2`, `GradientColor = 0x0110141E`. Das Acryl-Gas
-     hat festes Minimal-Alpha `0x01` und ist damit quasi durchsichtig — Windows 11 weichzeichnet den Desktop
-     hinter dem Widget komplett **ohne den üblichen grauen Schleier**.
-   * Aus → `ACCENT_DISABLED` (0): kein Blur, kein Windows-Material — dank `AllowsTransparency="True"`
-     ist das Fenster dann zu 100 % glasklar.
-3. In `SourceInitialized` setzt `Interop/WindowBackdropHelper.cs` zusätzlich per `DwmSetWindowAttribute`:
-   * `20` → `DWMWA_USE_IMMERSIVE_DARK_MODE` (dunkle Rahmen)
+   — everything outside the widget's own layout is 100 % transparent. Deliberately **no** `WindowChrome`,
+   **no** `GlassFrameThickness`, **no** `DWMWA_SYSTEMBACKDROP_TYPE` (Mica and Mica Alt would be nearly opaque grey
+   and would thicken further when the window loses focus).
+2. The **acrylic blur** is independent of focus and comes exclusively from `user32!SetWindowCompositionAttribute`:
+   * On  → `ACCENT_ENABLE_ACRYLICBLURBEHIND` (4), `AccentFlags = 2`, `GradientColor = 0x0110141E`. The acrylic layer
+     carries a fixed minimal alpha of `0x01` and is therefore virtually transparent — Windows 11 softens the desktop
+     behind the widget completely, **without the usual grey veil**.
+   * Off → `ACCENT_DISABLED` (0): no blur and no Windows material — thanks to `AllowsTransparency="True"` the window
+     is then 100 % fully transparent.
+3. In `SourceInitialized`, `Interop/WindowBackdropHelper.cs` additionally sets through `DwmSetWindowAttribute`:
+   * `20` → `DWMWA_USE_IMMERSIVE_DARK_MODE` (dark frame)
    * `33` → `DWMWA_WINDOW_CORNER_PREFERENCE = DWMWCP_ROUND`
-4. Damit der Milchglas-Blur nicht eckig über die abgerundeten Ecken hinausragt, wird das Fenster per GDI-Region beschnitten
-   (`CreateRoundRectRgn` + `SetWindowRgn`, Radius = `8 DIP` mal Skalierung mal DPI-Faktor). Die Region folgt Größen-,
-   Skala- und DPI-Wechseln automatisch.
-5. **Der Slider „Glas-Tönung“ (0–100 %, Standard 0 %) regelt genau EINE XAML-Schicht:**
-   das Alpha des RootBorder-Hintergrunds (`#0D111A`) von `5` (0 %, fast freier Durchblick) bis `235` (100 %, stark
-   abgedunkelt). Keine sich aufaddierenden Ebenen, kein Eingriff in die Karten und nie in die Blur-Schicht.
-6. Die Geräte-Karten sind bewusst extrem durchscheinend (8 % weißer Schimmer `#14FFFFFF`, 1-px-Lichtkante `#33FFFFFF`),
-   damit Blur und Wallpaper auch *durch die Karten* sichtbar bleiben; der helle Glanz von oben ist reines Spekular-Highlight.
-7. Der eigentliche Bildschirminhalt (Trommeln, Wellen, Partikel, Balken) läuft in einer einzigen
-   `CompositionTarget.Rendering`-Schleife mit Delta-Zeit — die Bewegung bleibt dadurch gleichmäßig, auch während im
-   Hintergrund Daten geladen werden. Netzwerkarbeit läuft vollständig `async`, die UI wird nur per `Dispatcher.BeginInvoke`
-   aktualisiert.
+4. So that the acrylic blur does not stick out square over the rounded corners, the window is clipped by a GDI region
+   (`CreateRoundRectRgn` + `SetWindowRgn`, radius = `8 DIP` × scaling × DPI factor). The region follows changes of size,
+   scaling and DPI automatically.
+5. **The "Glass tint" slider (0–100 %, default 0 %) controls exactly ONE XAML layer:**
+   the alpha of the root border background (`#0D111A`), from `5` (0 %, almost clear view) to `235` (100 %, strongly
+   darkened). No stacking layers, no interference with the cards and never with the blur layer.
+6. The device cards are deliberately extremely translucent (8 % white shimmer `#14FFFFFF`, 1-px light edge `#33FFFFFF`)
+   so the blur and the wallpaper stay visible *through the cards* as well; the bright sheen from the top is a pure specular highlight.
+7. The actual screen content (drums, waves, particles, bars) runs in a single
+   `CompositionTarget.Rendering` loop with delta time — the motion stays even while data is loaded in the background.
+   Network work is fully `async`, the UI is only updated through `Dispatcher.BeginInvoke`.
 
-Der Glas-Zustand steht im Fuß des Widgets („Acryl-Blur an“ / „Glasklar“) und im
-Einstellungsfenster unter „Glas & Aussehen“ (mit technischem Detailtext).
+The glass state is shown in the widget footer ("Acrylic blur on" / "Fully transparent") and in the settings window
+under "Glass & appearance", including the technical detail text.
 
 ---
 
-## Fehlerbehebung
+## Troubleshooting
 
-| Symptom | Ursache / Abhilfe |
+| Symptom | Cause / fix |
 |---|---|
-| Kein Hintergrund-Blur, nur dunkles Glas | Windows: *Einstellungen → Personalisierung → Farbeneffekte → Transparenzeffekte* einschalten. Ohne Transparenzeffekte verweigert DWM sowohl Acrylic als auch den Accent-Blur; das Widget bleibt dann bei seiner XAML-Tönung (Fuß zeigt `Glasklar`). |
-| Milchglas-Blur ragt eckig aus den abgerundeten Ecken heraus | Wird automatisch per GDI-Fensterregion (`CreateRoundRectRgn` + `SetWindowRgn`) auf den Eckradius beschnitten; die Region folgt Skalierung und DPI-Wechseln. |
-| Kein Blur unter einem Spiel | Im exklusiven Vollbild übernimmt das Spiel den Bildschirm; DWM-Blur ist dort technisch nicht möglich. |
-| `Live · SmartThings` wird rot / Karte zeigt „Getrennt“ | Token abgelaufen oder widerrufen, Gerät aus der SmartThings-Instanz entfernt, kein Netzwerk. Einstellungen → Token testen. |
-| „Keine Geräte im SmartThings-Zugang gefunden“ | Token ohne Leseberechtigung, oder die Geräte hängen an einem anderen Hub/Modus. Token mit *Read devices*-Scope verwenden, `--reset` hilft bei verstellter Konfiguration. |
-| Karte zeigt „Das Gerät hat keine washerOperatingState-Anzeige“ | Falsches Gerät zugeordnet (z. B. der TV). Einstellungen → Gerätezuordnung manuell setzen. |
-| Widget nirgends sichtbar, aber im Tray | Es wurde ausgeblendet: Tray-Symbol Doppelklick. Bei „Position gesperrt“ zuerst in den Einstellungen entsperren. |
-| Widget außerhalb des sichtbaren Bereichs (nach Monitorwechsel) | `run.bat --reset`, oder `window.left`/`top` in `config.json` anpassen. |
-| Etwas läuft nicht | `%LOCALAPPDATA%\SmartWashWidget\error.log` ansehen (UI-Ausnahmen und Konfigurationsfehler werden dort protokolliert). |
+| No background blur, only dark glass | Windows: *Settings → Personalization → Colors → Transparency effects* must be on. Without transparency effects DWM refuses both acrylic and the accent blur; the widget then stays with its XAML tint (footer shows `Fully transparent`). |
+| Acrylic blur sticks out square over the rounded corners | Handled automatically by the GDI window region (`CreateRoundRectRgn` + `SetWindowRgn`), which follows scaling and DPI changes. |
+| No blur while gaming | In exclusive fullscreen the game owns the screen; DWM blur is technically impossible there. |
+| `Live · SmartThings` turns red / the header reads `Connection lost` | Sign-in session expired or revoked, device removed from the SmartThings instance, or no network. Settings → **Reconnect account** restores it in one click. |
+| "No devices were found in your SmartThings account." | The account has no washers or dryers in it, or the devices sit in another account/location. Check the account, then click **Connect with Samsung SmartThings now** again. |
+| Card says "This device has no washerOperatingState readout. Please pick another device." | Wrong device assigned (for example the TV). Settings → choose the correct washer or dryer in the drop-downs. |
+| Widget nowhere to be seen, but the tray icon is there | It was hidden: double-click the tray icon. If "Lock position" is on, unlock it in the settings first. |
+| Widget outside the visible area (after a monitor change) | `run.bat --reset`, or adjust `window.left` / `top` in `config.json`. |
+| Something does not work | Look at `%LOCALAPPDATA%\SmartWashWidget\error.log` (UI exceptions and configuration errors are logged there). |
 
 ---
 
-## Bekannte Grenzen
+## Known limitations
 
-* SmartThings nennt **keine Gesamtlaufzeit** von Programmen. Fortschritt und Restzeit werden aus `remainingTime`, `completionTime` und dem gemeldeten `progress` kombiniert; fehlt alles, schätzt das Widget über die gemeldete Phase.
-* Bei älteren Firmware-/Hub-Kombinationen fehlen `remainingTime`/`progress` komplett — dann zeigt die Karte `--:-- h` und der Balken folgt der Phasenschätzung.
-* Nach Abschluss eines Laufs bleibt „Fertig“ bis zum nächsten Poll (45 s) sichtbar, danach kehrt die Karte auf `Bereit` zurück.
-* Im Standby meldet die Samsung-Firmware oft noch die Werte des letzten Laufs (`progress: 1`, alte Restzeit). Das Widget ignoriert sie, solange der Zustand nicht `Läuft`/`Pausiert` ist — deshalb erscheint im Bereit-Zustand `0 %` und `--- h`.
-* Das Widget ist bewusst **kein Steuerungsclient**: es startet, pausiert oder stoppt keine Geräte (Schreibrechte am Token bleiben unnötig).
-* Der weiche Desktop-Durchblick (`Acrylic`) läuft über die undokumentierte Accent-Policy (`SetWindowCompositionAttribute`). Sie ist seit Windows 10 stabil, kann aber von Windows-Updates in ihrem Verhalten geändert werden; dann zeigt der Fuß `Glasklar` und nur die XAML-Tönung bleibt.
-* DWM zeigt generisch keinen Blur unter exklusiven Vollbild-Anwendungen (Spielen) und keine Backdrops, wenn die Transparenzeffekte ausgeschaltet sind — das ist eine Systemeinschränkung, kein Widget-Fehler.
-* Unter Windows 10 (Build < 22000) gibt es keine DWM-Backdrops: dort bleibt nur die XAML-Tönung.
-
----
-
-## Datenhaltung und Datenschutz
-
-* Token: DPAPI (`ProtectedData`, Scope `CurrentUser`, eigene Entropie) → nur dieses Windows-Benutzerkonto kann ihn lesen. Kein Token im Quellcode, kein Token im Installer.
-* Sonstige Einstellungen, Geräte-IDs und Anzeigenamen: lokale `config.json` im eigenen AppData-Ordner.
-* Fehlerprotokoll: `%LOCALAPPDATA%\SmartWashWidget\error.log`.
-* Es werden keine Daten an Dritte gesendet; die einzigen Netzwerkverbindungen gehen zu `api.smartthings.com`.
-* Das Widget nutzt ausschließlich Lesezugriff (`GET` auf Geräte-Status) und sendet keine Befehle an die Geräte.
-* In diesem Repository liegen **keine Zugangsdaten**. `.gitignore` hält alle Token-Dateien (`*Token*`, `*.pat`) und `config.json`-Reste aus der Historie heraus — ein eigenes Token gehört trotzdem nicht in den Projektordner, sondern nur in die verschlüsselte Konfiguration unter `%LOCALAPPDATA%`.
+* SmartThings reports **no total cycle duration**. Progress and remaining time are combined from `remainingTime`, `completionTime` and the reported `progress`; when all of them are missing, the widget estimates from the reported phase.
+* On older firmware/hub combinations `remainingTime` and `progress` are missing entirely — the card then shows `--:-- h` and the bar follows the phase estimate.
+* After a cycle finishes, `Finished` stays visible until the next poll (45 s), after which the card returns to `Ready`.
+* On standby, Samsung firmware often still reports the values of the last cycle (`progress: 1`, an old remaining time). The widget ignores them as long as the state is not `Running` or `Paused` — which is why the ready state shows `0 %` and `--- h`.
+* The widget is deliberately **not a control client**: it never starts, pauses or stops devices (write permissions on the access are not needed).
+* The soft view through the desktop (`Acrylic`) uses the undocumented accent policy (`SetWindowCompositionAttribute`). It has been stable since Windows 10, but a Windows update can change its behaviour; the footer then reports `Fully transparent` and only the XAML tint remains.
+* DWM generically shows no blur under exclusive fullscreen applications (games) and no backdrops when transparency effects are switched off — that is a system limitation, not a widget defect.
+* On Windows 10 (build < 22000) there are no DWM backdrops: only the XAML tint remains there.
+* The one-click connection depends on the official SmartThings CLI being downloadable. On restricted networks the manual personal access token remains available as a fallback.
 
 ---
 
-## Projektstruktur
+## Data storage and privacy
+
+* Access token: DPAPI (`ProtectedData`, scope `CurrentUser`, own entropy) → only this Windows account can decrypt it. No token in the source code, no token in the installer.
+* The CLI bridge keeps its own session in `%LOCALAPPDATA%\@smartthings\cli\Data\credentials.json`; that file belongs to the official SmartThings CLI. The widget only reads the access token from it and mirrors it, DPAPI-sealed, into its own configuration.
+* Other settings, device IDs and display names: the local `config.json` in your own AppData folder.
+* Error log: `%LOCALAPPDATA%\SmartWashWidget\error.log`.
+* No data is sent to third parties; the only network connections go to `api.smartthings.com` and, for the setup assistant, to the official SmartThings CLI release on GitHub.
+* The widget uses read access only (`GET` on device status) and sends no commands to the devices.
+* This repository contains **no credentials**. `.gitignore` keeps every token file (`*Token*`, `*.pat`) and leftover `config.json` files out of the history — your own token still does not belong in the project folder, only in the encrypted configuration under `%LOCALAPPDATA%`.
+
+---
+
+## Project structure
 
 ```
 SmartWashWidget/
-  SmartWashWidget.csproj        .NET 9, WPF + WinForms-NotifyIcon, keine NuGet-Pakete
-  app.manifest                  DPI-/Kompatibilitätsmanifest
-  App.xaml / App.xaml.cs        Einstieg: Einzelinstanz, Demo/Live, Tray, Polling
-  MainWindow.xaml(.cs)          Glasfenster, Kopfzeile, Footer, Kontextmenü, DragMove
-  SettingsWindow.xaml(.cs)      Einstellungen: Token, Geräte, Darstellung, Demo
-  Themes/Win11Styles.xaml       Farben, Typo, Glas-Karten, Toggle, Glyph-Buttons
-  Controls/MachineCard.xaml(.cs) Karte: Status-Pill, Fortschrittsbalken, Phasenzeile
-  Controls/DrumVisual.cs        Trommel, Wasserwelle, Hitzewellen, Partikel (60 FPS)
-  Controls/AnimationEngine.cs   Ein Frame-Treiber für alle Karten + Demo-Tick
-  Models/MachineSnapshot.cs     Zustandsmodell, RunState, Phasen, DiscoveredDevice
-  Services/SmartThingsClient.cs HttpClient + JSON, Geräteerkennung, Status-Parsing
-  Services/PollingCoordinator.cs Intervalle, Backoff, Ereignisse
-  Services/AppConfigService.cs   Konfiguration, DPAPI-Token, atomares Speichern
-  Services/DemoSimulation.cs     Demo-Zyklen und -Phasen
-  Services/TrayIconService.cs    NotifyIcon + Menü
-  Interop/WindowBackdropHelper.cs Blur an/aus (Accent-Policy), Tönungs-Alpha 5..235, runde Fensterregion (SetWindowRgn)
-  Interop/AccentPolicy.cs        user32!SetWindowCompositionAttribute (fokusunabhängiger Acryl-Blur)
-run.bat                         Start (nutzt publish/Release/Debug, baut sonst selbst)
-build_release.bat               Single-File-Publish + Inno-Setup-Installer
-installer/setup.iss             Inno-Setup-Skript
-Assets/SmartWashWidget.ico      Programmsymbol (Bullauge) für EXE und Installer
-Assets/preview/                 Vorschauen des Symbols (blatt.png, icon-<groesse>.png)
-tools/icon-gen/                 Generator für das Symbol (GDI+, parametrisch, ohne Bildvorlage)
-Screenshots/                    Vorschau-GIFs und Einstellungsbilder für dieses README
-.github/workflows/build.yml     CI: Kompilieren + Single-File-Publish als Artefakt
-LICENSE                         MIT-Lizenz
-.editorconfig, .gitattributes   Einheitliche Einrückung und Zeilenenden
+  SmartWashWidget.csproj        .NET 9, WPF + WinForms NotifyIcon, no NuGet packages
+  app.manifest                  DPI / compatibility manifest
+  App.xaml / App.xaml.cs        entry point: single instance, demo/live, tray, polling, hourly token refresh
+  MainWindow.xaml(.cs)          glass window, header, footer, context menu, DragMove
+  SettingsWindow.xaml(.cs)      settings: one-click connection, devices, appearance, demo, expert values
+  Themes/Win11Styles.xaml       colours, typography, glass cards, toggles, glyph buttons
+  Resources/Strings.de/.xaml    interface texts (German)
+  Resources/Strings.en.xaml     interface texts (English)
+  Controls/MachineCard.xaml(.cs) card: status pill, progress bar, phase line
+  Controls/DrumVisual.cs        drum, water wave, heat waves, particles (60 FPS)
+  Controls/AnimationEngine.cs   one frame driver for all cards + demo tick
+  Models/MachineSnapshot.cs     state model, RunState, phases, DiscoveredDevice
+  Services/SmartThingsClient.cs HttpClient + JSON, device discovery, status parsing, automatic token refresh
+  Services/SmartThingsOAuthSetupService.cs   one-click connection: CLI download, browser sign-in, device assignment
+  Services/SmartThingsCliAuth.cs             CLI bridge: read and renew the CLI-managed token
+  Services/PollingCoordinator.cs intervals, backoff, events
+  Services/AppConfigService.cs   configuration, DPAPI-sealed secrets, atomic saving
+  Services/LocalizationManager.cs  language switching without restart
+  Services/DemoSimulation.cs     demo cycles and phases
+  Services/TrayIconService.cs    NotifyIcon + menu
+  Interop/WindowBackdropHelper.cs blur on/off (accent policy), tint alpha 5..235, rounded window region (SetWindowRgn)
+  Interop/AccentPolicy.cs        user32!SetWindowCompositionAttribute (focus-independent acrylic blur)
+run.bat                         start (uses publish/Release/Debug, builds it otherwise)
+build_release.bat               single-file publish + Inno Setup installer
+installer/setup.iss             Inno Setup script
+Assets/SmartWashWidget.ico      application icon (porthole) for EXE and installer
+Assets/preview/                 icon previews (blatt.png, icon-<size>.png)
+tools/icon-gen/                 icon generator (GDI+, parametric, without template image)
+Screenshots/                    preview GIFs and settings images for this README
+.github/workflows/build.yml     CI: compile + single-file publish as an artifact
+LICENSE                         MIT license
+.editorconfig, .gitattributes   consistent indentation and line endings
 ```
 
 ---
 
-## Kurzreferenz
+## Quick reference
 
 ```bat
-run.bat --settings        :: Einstellungen öffnen
-run.bat --demo            :: Design ansehen
-build_release.bat         :: EXE + Installer erzeugen
+run.bat --settings        :: open the settings
+run.bat --demo            :: look at the design
+build_release.bat         :: create EXE + installer
 ```
 
-Version 1.0.0 · Windows 11 (Build 22621 oder neuer empfohlen) · .NET 9 SDK zum Bauen erforderlich (`dotnet --version` → 9.x).
+Version 1.0.0 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
 
 ---
 
-## Lizenz
+## License
 
-MIT-Lizenz, siehe [LICENSE](LICENSE). Du darfst den Code nutzen, verändern und weiterverteilen — auch kommerziell — solange der Copyright-Hinweis erhalten bleibt.
+MIT license, see [LICENSE](LICENSE). You may use, modify and redistribute the code — including commercially — as long as the copyright notice is retained.
 
-Samsung, SmartThings und SmartThings-API sind Marken der Samsung Electronics Co., Ltd. Dieses Projekt ist unabhängig und nicht von Samsung gesponsert oder autorisiert; der Zugang erfolgt über deinen eigenen SmartThings-Account und dein eigenes Token.
+Samsung, SmartThings and the SmartThings API are trademarks of Samsung Electronics Co., Ltd. This project is independent and not sponsored or endorsed by Samsung; access happens through your own SmartThings account and your own sign-in.
