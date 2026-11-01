@@ -9,8 +9,8 @@ Connecting is **one click**: the widget fetches the official SmartThings CLI, op
 
 Ready-to-run builds on the **[latest release](https://github.com/jsabrautzky-oss/SmartWashWidget/releases/latest)** — both are the same self-contained win-x64 single-file EXE, so neither needs an installed .NET:
 
-* **`SmartWashWidget-Setup-1.1.1.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
-* **`SmartWashWidget-Portable-1.1.1-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
+* **`SmartWashWidget-Setup-1.1.2.exe`** — Inno Setup installer: Start Menu entry, optional desktop shortcut, optional "start with Windows" task
+* **`SmartWashWidget-Portable-1.1.2-win-x64.zip`** — portable version: unpack anywhere and start `SmartWashWidget.exe`, no installation and no administrator rights
 
 ---
 
@@ -64,7 +64,7 @@ Without a stored token the widget starts immediately in **demo mode** with anima
 | **Automatic device discovery** | Washer and dryer are recognised through their capabilities and assigned automatically; when several candidates match, the drop-downs in the settings window pick the right one |
 | **States** | `Running`, `Paused`, `Finished`, `Ready` (standby glow), `Offline` — and `Connection lost` in the header when the access itself fails |
 | **Progress** | Remaining time from `remainingTime` / `remainingTimeStr` / `completionTime`, the machine's reported `progress`, and the phase name (pre-wash, washing, rinsing, spinning, drying, cooling down) |
-| **Animations (60 FPS)** | Drum with paddles, water wave + beads while washing, heat bands + warm particles while drying, glowing progress bar with percentage |
+| **Animations (throttled frame loop)** | Drum with paddles, water wave + beads while washing, heat bands + warm particles while drying, glowing progress bar with percentage. The loop is capped at 20 FPS while a machine works, runs at 10 FPS for pure logic ticks and detaches completely when both machines stand still: nothing is repainted, the acrylic backdrop is not recomputed, and measured 3D GPU load in idle is ~0 % |
 | **Tray icon** | Drawn programmatically, recoloured by connection state, menu with show/hide, live demo mode, acrylic blur, settings, exit |
 | **Settings window** | Samsung connection and device assignment, acrylic blur on/off, glass tint 0–100 % (default 0 %), size 70–150 %, lock position, always on top, hardware rounded corners, demo speed, interface language, **start with Windows on/off**, **show in the taskbar on/off**, **update check on/off** |
 | **Start with Windows** | The switch writes (or removes) the value `"SmartWashWidget"` under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` — current user only, no administrator rights, no scheduled task. The registry is the single source of truth, so an autostart added by hand stays visible in the settings |
@@ -155,8 +155,8 @@ build_release.bat
 Result:
 
 * `publish\SmartWashWidget.exe` — one single EXE (win-x64, self-contained; needs no installed .NET)
-* `dist\SmartWashWidget-Setup-1.1.1.exe` — Inno Setup installer (when Inno Setup is installed)
-* `dist\SmartWashWidget-Portable-1.1.1-win-x64.zip` — portable version, built in any case
+* `dist\SmartWashWidget-Setup-1.1.2.exe` — Inno Setup installer (when Inno Setup is installed)
+* `dist\SmartWashWidget-Portable-1.1.2-win-x64.zip` — portable version, built in any case
 
 The installer offers:
 
@@ -167,7 +167,7 @@ The installer offers:
 
 ### Portable version (no installation, no administrator rights)
 
-`dist\SmartWashWidget-Portable-1.1.1-win-x64.zip` unpacks to one folder `SmartWashWidget-1.1.1` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
+`dist\SmartWashWidget-Portable-1.1.2-win-x64.zip` unpacks to one folder `SmartWashWidget-1.1.2` with `SmartWashWidget.exe`, `README.md` and `LICENSE`. Put it wherever you like — Documents, an external SSD, a USB stick — and start the EXE by double click:
 
 * the same self-contained single-file build as in the installer, verified by its SHA-256 (see the release notes)
 * **no administrator rights**: nothing is written to Program Files or to the registry, and nothing is registered for uninstallation
@@ -427,7 +427,7 @@ run.bat --demo            :: look at the design
 build_release.bat         :: create EXE + installer + portable ZIP
 ```
 
-Version 1.1.1 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
+Version 1.1.2 · Windows 11 (build 22621 or newer recommended) · .NET 9 SDK required to build (`dotnet --version` → 9.x).
 
 ---
 

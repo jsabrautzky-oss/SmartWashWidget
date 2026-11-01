@@ -9,7 +9,7 @@
 ;=============================================================================
 
 #define MyAppName "SmartWashWidget"
-#define MyAppVersion "1.1.1"
+#define MyAppVersion "1.1.2"
 #define MyAppPublisher "jsabrautzky-oss"
 #define MyAppExeName "SmartWashWidget.exe"
 #define MyAppWebsite "https://github.com/jsabrautzky-oss/SmartWashWidget"
