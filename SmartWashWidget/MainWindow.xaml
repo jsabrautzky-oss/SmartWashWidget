@@ -22,7 +22,16 @@
            gezeichneten Flaeche sind wirklich durchsichtig.
          - Blur kommt ausschliesslich aus user32!SetWindowCompositionAttribute
            (ACCENT_ENABLE_ACRYLICBLURBEHIND, GradientColor-Alpha fest 0x01 -> kein grauer Schleier).
-         - Abdunkelung kommt ausschliesslich aus DIESEM einen RootBorder-Hintergrund. -->
+         - Abdunkelung kommt ausschliesslich aus DIESEM einen RootBorder-Hintergrund.
+
+     GPU-Prüfung (Ruhebetrieb): dieses Fenster enthaelt kein einziges Storyboard, keine
+     Timeline, keinen EventTrigger, keinen DropShadowEffect und keinen BlurEffect. Alle
+     Status-Anzeigen (SyncDot, StatusPill, Phasensymbol) sind statisch und werden nur bei
+     echten Aenderungen geschrieben. Damit bleibt die Glasscheibe in Ruhe vollstaendig
+     unbewegt: kein Repaint, kein Acryl-Shader-Durchlauf. Auf CacheMode="BitmapCache" wurde
+     bewusst verzichtet - es gaebe nur zwischengespeicherte Bitmaps fuer die skalierbare
+     Vektor-/Textdarstellung (Skala 0,70..1,50) und waere bei effektfreiem Inhalt teurer
+     als der Vektorweg. -->
     <Border x:Name="RootBorder"
             Width="348" Height="546"
             CornerRadius="8"

@@ -35,6 +35,16 @@ namespace SmartWashWidget
         private double _appliedScale = double.NaN;
         private bool? _appliedTaskbar;
 
+        // Memoisierung aller DWM-/GDI-Arbeit: Acryl-Policy, Fensterregion und Glas-Ton werden
+        // ausschliesslich bei einer echten Aenderung gesetzt (Fensterstart, SizeChanged,
+        // DPI-Wechsel, Skala-/Glas-Einstellung). Waehrend des Status- und Poll-Timers ruft
+        // keine dieser Funktionen die DWM-Interop auf.
+        private bool _glassAppliedOnce;
+        private int _appliedRegionRadius = -1;
+        private int _appliedRegionWidth;
+        private int _appliedRegionHeight;
+        private byte _appliedTintAlpha;              // 0 = noch nie (der kleinste Ton ist 5)
+
         private bool _dragging;
         private ContextMenu? _menu;
 
@@ -101,21 +111,40 @@ namespace SmartWashWidget
             _hwnd = source.Handle;
 
             RestorePosition();
-            ApplyGlass(_app.Config.Window.AcrylicBlur);
-            QueueCornerRegion();
+
+            // Reihenfolge: Taskleisten-Stil zuerst, Glas zuletzt. ApplyTaskbarVisibility kann die
+            // Accent-Policy verwischen; weil ApplyGlass danach setzt, bleibt genau EIN finaler
+            // Acryl-Aufruf uebrig (kein zweiter DWM-Durchlauf beim Start).
             ApplyTaskbarVisibility(live: false);
+            ApplyGlass(_app.Config.Window.AcrylicBlur);
+
+            // Nach dem finalen Layout sicherheitshalber noch einmal anfragen: identische
+            // Region (radius + Clientflaeche) wird memoisiert uebersprungen.
+            QueueCornerRegion();
 
             // Groessen-, Skala- und DPI-wechseln verschieben die Grenze der abgerundeten Region.
+            // Nur diese drei Punkte (plus Glas-/Skala-Einstellung) ruehren an der HWND-Region -
+            // der Status-/Poll-Timer ruft niemals eine DWM-Interop-Funktion auf.
             SizeChanged += (s, e) => QueueCornerRegion();
             DpiChanged += (s, e) => QueueCornerRegion();
         }
 
-        /// <summary>Setzt Milchglas-Blur (Accent-Policy), dunklen Rahmen und runde Ecken neu.</summary>
+        /// <summary>
+        /// Setzt Milchglas-Blur (Accent-Policy), dunklen Rahmen und runde Ecken neu - aber nur,
+        /// wenn sich die Glas-Einstellung tatsaechlich geaendert hat. Gleiche Einstellung =
+        /// kein SetWindowCompositionAttribute, kein DwmSetWindowAttribute, kein SetWindowRgn.
+        /// </summary>
         public void ApplyGlass(bool acrylicBlur)
         {
             if (_hwnd == IntPtr.Zero) return;
 
             bool rounded = _app.Config.Window.RoundedCorners;
+
+            if (_glassAppliedOnce && _appliedBlur == acrylicBlur && _appliedRounded == rounded)
+            {
+                UpdateBackdropText();
+                return;
+            }
 
             _glass = WindowBackdropHelper.Apply(
                 _hwnd,
@@ -127,6 +156,7 @@ namespace SmartWashWidget
 
             _appliedBlur = acrylicBlur;
             _appliedRounded = rounded;
+            _glassAppliedOnce = true;
 
             UpdateBackdropText();
         }
@@ -134,10 +164,13 @@ namespace SmartWashWidget
         /// <summary>
         /// Rundet die HWND-Region. Noetig, weil die Accent-Policy ihren Blur aufs volle Fensterrechteck
         /// malt: ohne Region ragt der Milchglas-Blur eckig ueber die abgerundeten XAML-Ecken hinaus.
+        /// Auf dem Handle landet die Region nur, wenn Radius oder Clientflaeche anders sind als zuletzt.
         /// </summary>
         private void RefreshCornerRegion()
         {
             if (_hwnd == IntPtr.Zero) return;
+
+            if (!WindowBackdropHelper.TryClientSize(_hwnd, out int width, out int height)) return;
 
             double scale = _app.Config.Window.ClampScale();
             double device = WindowBackdropHelper.GetDeviceScale(_hwnd);
@@ -146,7 +179,15 @@ namespace SmartWashWidget
                 ? (int)Math.Round(GlassCornerRadiusDip * scale * device)
                 : 0;
 
-            bool ok = WindowBackdropHelper.ApplyRoundedRegion(_hwnd, radius);
+            if (radius == _appliedRegionRadius && width == _appliedRegionWidth && height == _appliedRegionHeight)
+                return;
+
+            bool ok = WindowBackdropHelper.ApplyRoundedRegion(_hwnd, width, height, radius);
+            if (!ok) return;   // Memo unveraendert lassen: beim naechsten Anlass erneut versuchen.
+
+            _appliedRegionRadius = radius;
+            _appliedRegionWidth = width;
+            _appliedRegionHeight = height;
 
             if (_glass is not null && _glass.RegionApplied != ok)
                 _glass = _glass with { RegionApplied = ok };
@@ -166,7 +207,9 @@ namespace SmartWashWidget
         private void UpdateBackdropText()
         {
             if (BackdropText is null) return;
-            BackdropText.Text = DescribeGlass(_app.Config.Window.AcrylicBlur);
+
+            string text = DescribeGlass(_app.Config.Window.AcrylicBlur);
+            SetText(BackdropText, text);
         }
 
         public string? GlassDetail => _glass?.Detail;
@@ -218,6 +261,13 @@ namespace SmartWashWidget
         private void ApplyTint(double tint)
         {
             byte alpha = WindowBackdropHelper.TintAlphaForSlider(tint);
+
+            // Diff-Check: der RootBorder-Hintergrund IST die Glasscheibe. Ein identischer
+            // Alpha-Wert darf nie neu gesetzt werden - jedes Setzen heiessst Neuzeichnen und
+            // ein neuerlicher Acryl-Shader-Durchlauf der GPU.
+            if (alpha == _appliedTintAlpha) return;
+
+            _appliedTintAlpha = alpha;
 
             TintBrush.Color = Color.FromArgb(
                 alpha,
@@ -398,6 +448,11 @@ namespace SmartWashWidget
         {
             if (snap.Kind == MachineKind.Washer) _washerCard.ApplySnapshot(snap);
             else _dryerCard.ApplySnapshot(snap);
+
+            // Der Frame-Loop ist im Ruhezustand abgekoppelt (GPU-Last ~0 %). Ein neuer Snapshot
+            // ist der Anlass, ihn wieder aufzuwecken - ob er danach wirklich Bildrate verlangen
+            // muss, melden die Karten selbst ueber NeedsFrames/AnimatesVisual.
+            _app.Engine.Wake();
         }
 
         public void ShowDeviceError(MachineKind kind, string message)
@@ -418,9 +473,10 @@ namespace SmartWashWidget
         public void SetConnectionState(ConnectionState state)
         {
             _connection = state;
-            SyncText.Text = LocalizationManager.Get(StateKey(state));
 
-            SyncDot.Fill = state switch
+            SetText(SyncText, LocalizationManager.Get(StateKey(state)));
+
+            Brush dot = state switch
             {
                 ConnectionState.Live => FindBrush("OkBrush"),
                 ConnectionState.Demo => FindBrush("AccentCyanBrush"),
@@ -428,6 +484,10 @@ namespace SmartWashWidget
                 ConnectionState.Error => FindBrush("ErrBrush"),
                 _ => FindBrush("TextTertiaryBrush")
             };
+
+            // Diff-Check: gleiche Fuellung nicht noch einmal setzen (kein Neuzeichnen, kein Blur-Pass).
+            if (!ReferenceEquals(SyncDot.Fill, dot))
+                SyncDot.Fill = dot;
         }
 
         private static string StateKey(ConnectionState state) => state switch
@@ -445,7 +505,7 @@ namespace SmartWashWidget
             _footerNoteArgs = Array.Empty<object?>();
             _footerIsRaw = true;
             _footerText = text;
-            FooterText.Text = text;
+            SetText(FooterText, text);
         }
 
         /// <summary>Fusszeilen-Hinweis aus Sprachschluesseln (uetersetzt sich bei Sprachwechsel neu).</summary>
@@ -477,7 +537,7 @@ namespace SmartWashWidget
                       LocalizationManager.Format(_footerNoteKey, _footerNoteArgs));
 
             _footerText = text;
-            FooterText.Text = text;
+            SetText(FooterText, text);
         }
 
         public void SetSetupHint(string hint)
@@ -497,15 +557,19 @@ namespace SmartWashWidget
             if (info is null) return;
 
             _updateInfo = info;
-            UpdateBadgeText.Text = LocalizationManager.Format("Str_Fmt_UpdateBadge", info.Display);
-            UpdateBadge.Visibility = Visibility.Visible;
+            SetText(UpdateBadgeText, LocalizationManager.Format("Str_Fmt_UpdateBadge", info.Display));
+
+            if (UpdateBadge.Visibility != Visibility.Visible)
+                UpdateBadge.Visibility = Visibility.Visible;
         }
 
         /// <summary>Update-Hinweis ausblenden (z. B. nachdem der Nutzer die Release-Seite geoeffnet hat).</summary>
         public void HideUpdate()
         {
             _updateInfo = null;
-            UpdateBadge.Visibility = Visibility.Collapsed;
+
+            if (UpdateBadge.Visibility != Visibility.Collapsed)
+                UpdateBadge.Visibility = Visibility.Collapsed;
         }
 
         private void UpdateBadge_Click(object sender, RoutedEventArgs e) => _app.OpenLatestRelease();
@@ -524,16 +588,27 @@ namespace SmartWashWidget
             UpdateBackdropText();
 
             if (_updateInfo is not null)
-                UpdateBadgeText.Text = LocalizationManager.Format("Str_Fmt_UpdateBadge", _updateInfo.Display);
+                SetText(UpdateBadgeText, LocalizationManager.Format("Str_Fmt_UpdateBadge", _updateInfo.Display));
 
             // Ein direkt gesetzter Text (Fehlermeldung) wird ueber den Rueckwaertsspeicher der
             // alten Sprache geholt; die Versions-Fusszeile wird neu gerechnet (Version + aktive Sprache).
             if (_footerIsRaw)
-                FooterText.Text = LocalizationManager.Relocalize(_footerText, previousLanguage);
+                SetText(FooterText, LocalizationManager.Relocalize(_footerText, previousLanguage));
             else
                 UpdateFooterText();
 
             ApplyMenuTexts();
+        }
+
+        /// <summary>
+        /// Diff-Check: ein TextBlock wird nur geschrieben, wenn sich sein Text tatsaechlich aendert.
+        /// Jede Zuweisung ohne Aenderung wuerde das transparente Fenster neu zeichnen und die GPU
+        /// zwingen, den DWM-Acryl-Blur ueber der Glasscheibe neu zu berechnen.
+        /// </summary>
+        private static void SetText(TextBlock view, string text)
+        {
+            if (view.Text == text) return;
+            view.Text = text;
         }
 
         private Brush FindBrush(string key)

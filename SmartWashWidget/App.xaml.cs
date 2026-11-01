@@ -196,6 +196,10 @@ namespace SmartWashWidget
                 _demoPump = new DemoPump(this);
                 Engine.Register(_demoPump);
             }
+            else
+            {
+                Engine.Wake();
+            }
 
             if (_main is not null)
             {
@@ -775,6 +779,16 @@ namespace SmartWashWidget
                     _app.PublishDemo();
                 }
             }
+
+            /// <summary>
+            /// Die Demo-Zeit muss weiterlaufen (auch waehrend der "Fertig"-Haltezeit). Ob dafuer
+            /// Bildrate noetig ist, entscheiden die Karten selbst: eine ruhende Trommel meldet
+            /// NeedsFrames = false, der Loop faehrt dann mit IdleFrameRate statt ActiveFrameRate.
+            /// </summary>
+            public bool NeedsFrames => true;
+
+            /// <summary>Der Pump malt selbst keine Pixel -> keine Zeichenarbeit, keine Bildrate.</summary>
+            public bool AnimatesVisual => false;
         }
     }
 }

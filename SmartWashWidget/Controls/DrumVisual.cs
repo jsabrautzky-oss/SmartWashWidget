@@ -12,10 +12,23 @@ namespace SmartWashWidget.Controls;
 /// <summary>
 /// Komplett im Code gezeichnete Bullauge-Trommel (keine Bilddateien, reine Vektoren).
 /// Waschmaschine: drehende Trommel + mathematisch berechnete Sinus-Wasserwelle + aufsteigende Luftblaeschen.
-/// Trockner: drehende Trommel + pulsierende Hitze-Wellen + warm leuchtende Partikel.
+/// Trockner: drehende Trommel + Hitze-Wellen + warm leuchtende Partikel.
 /// Alle Brushes/Geometrien der statischen Ebenen sind eingefroren; pro Frame werden nur
 /// Transform, Opacity und die Wellen-Geometrie gesetzt. Glow ueber Radialverlaeufe statt
-/// DropShadowEffect - das haelt die 60 FPS auch auf schwacher GPU sicher.
+/// DropShadowEffect - ein Shader-Pass pro Frame waere auf einer transparenten Acryl-Scheibe
+/// die teuerste Art zu zeichnen.
+///
+/// RUHEZUSTAND (der eigentliche GPU-Sparer): Steht eine Maschine (Aus / Bereit / Fertig /
+/// nicht erreichbar), hoert die Trommel vollstaendig auf zu arbeiten - keine Drehung, keine
+/// neu gebaute Wellengeometrie, keine Partikel, kein pulsierender "Bereit/Fertig"-Indikator.
+/// Jeder noch so kleine Schreibzugriff (Transform, Opacity, Data) wuerde das Fenster
+/// neu zeichnen und die GPU zwingen, den DWM-Acryl-Blur ueber der ganzen Glasscheibe neu zu
+/// berechnen. Deshalb:
+///   - alle Zielwerte werden am Rand exakt snapped (kein endloses exponentielles Kriechen),
+///   - alle geschriebenen Werte sind quantisiert und werden nur bei echter Aenderung
+///     geschrieben (Diff-Check auf Opacity- und Winkelstufe),
+///   - die Wasserflaeche wird beim Zur-Ruhe-Kommen EINMAL als stehende Flaeche gebaut,
+///   - NeedsFrames meldet false, sobald nichts mehr zeichnet -> AnimationEngine koppelt ab.
 /// </summary>
 public sealed class DrumVisual : Grid, IAnimated
 {
@@ -25,6 +38,36 @@ public sealed class DrumVisual : Grid, IAnimated
     private const double DrumR = 42;           // Radius der sichtbaren Trommel
     private const double InnerR = 40;          // nutzbbarer Innenraum (Wasser / Partikel)
     private const int WaveSteps = 44;
+
+    // ---------------- Ruhe-Schwellen: ab hier zeichnet die Trommel nichts mehr ----------------
+
+    /// <summary>Unter dieser Drehzahl gilt die Trommel als stehend (Bereit / Fertig / Aus).</summary>
+    private const double RestRpm = 0.05;
+
+    /// <summary>Unter dieser Bewegungsenergie gibt es keine Partikel und keine Hitzebaender.</summary>
+    private const double WorkEnergy = 0.12;
+
+    /// <summary>
+    /// Annaeherung wird auf diesen Werten exakt snapped. Ohne Snapped wuerde die exponentielle
+    /// Kurve endlos weiterschleichen und pro Frame neue Pixel erzeugen -> dauerhafter Blur-Repaint.
+    /// </summary>
+    private const double EnergySnap = 0.003;
+    private const double RpmSnap = 0.02;
+    private const double LevelSnap = 0.04;
+    private const double OpacitySnap = 0.004;
+
+    /// <summary>
+    /// Opacity-Stufe 1/48: geschrieben wird nur bei echter Aenderung des quantisierten Werts.
+    /// 1/48 liegt unterhalb der sichtbaren Schwelle und verhindert Subpixel-Churn.
+    /// </summary>
+    private const double OpacityLevels = 48.0;
+
+    /// <summary>Drehwinkelstufe in Grad: kleinere Aenderungen bewegen keine Pixel.</summary>
+    private const double AngleStep = 0.4;
+
+    /// <summary>Deckkraft der ruhenden Bereit-/Fertig-Anzeige: statisch, kein Puls mehr.</summary>
+    private const double ReadyIdleOpacity = 0.62;
+    private const double ReadyFinishedOpacity = 1.0;
 
     private static readonly Point CenterPoint = new Point(C, C);
     private static readonly double ReadyY = DesignSize - 20;
@@ -64,6 +107,7 @@ public sealed class DrumVisual : Grid, IAnimated
     private readonly Brush _particleBrush;
 
     // Zielwerte werden exponentiell angefahren -> Start/Stop wirkt weich, nicht sprunghaft.
+    // Am Rand wird exakt snapped (siehe Ruhe-Schwellen oben), damit das Annaehern endet.
     private double _targetEnergy = 1.0;
     private double _energy = 1.0;
     private double _targetRpm = 16.0;
@@ -74,7 +118,20 @@ public sealed class DrumVisual : Grid, IAnimated
     private bool _readyVisible;
     private bool _completionVisible;
     private double _readyOpacity;
-    private bool _surfaceBuilt;
+
+    // Ruhe-/Schreibzustand
+    private bool _animating = true;        // letzte Frame-Bewertung: zeichnet diese Trommel noch?
+    private bool _surfaceFrozen;           // stehende Wasserflaeche ist fertig gebaut
+    private bool _heatFrozen;              // Hitzebaender sind ausgeraeumt
+    private int _liveParticles;
+
+    // Zuletzt geschriebene (quantisierte) Werte - mehrfache identische Schreibzugriffe gibt es nicht.
+    private double _appliedAngle = double.NaN;
+    private double _glowApplied = double.NaN;
+    private double _readyGlowApplied = double.NaN;
+    private double _readyRingApplied = double.NaN;
+    private double _readyTickApplied = double.NaN;
+    private readonly double[] _heatApplied = new double[] { double.NaN, double.NaN, double.NaN };
 
     public DrumVisual(MachineKind kind)
     {
@@ -243,6 +300,12 @@ public sealed class DrumVisual : Grid, IAnimated
 
     public MachineKind Kind => _kind;
 
+    /// <summary>false, sobald die Trommel im Ruhezustand steht und nichts mehr zeichnet.</summary>
+    public bool NeedsFrames => _animating;
+
+    /// <summary>Dieselbe Aussage von der Zeichen-Seite: nur eine arbeitende Trommel verlangt Bildrate.</summary>
+    public bool AnimatesVisual => _animating;
+
     // ---------------- Zustand ----------------
 
     public void ApplyState(MachineSnapshot snap)
@@ -293,13 +356,19 @@ public sealed class DrumVisual : Grid, IAnimated
                 break;
 
             default:
-                _targetEnergy = 0.22;
+                _targetEnergy = 0.06;
                 _targetRpm = 0.0;
                 _targetLevel = 4.0;
                 _readyVisible = true;
                 _completionVisible = false;
                 break;
         }
+
+        // Running/Paused liegen mit ihrer Zielenergie ueber der Arbeitsschwelle (die Trommel
+        // zeichnet), Finished/Idle/Unreachable/Unknown darunter: der Ubergang wird ausgeklaeut
+        // und danach zeichnet diese Trommel nichts mehr.
+        _surfaceFrozen = false;   // neuer Zustand = neue Geometrie (z. B. anderer Wasserstand)
+        _heatFrozen = false;
     }
 
     private double RpmFromJob(string job)
@@ -363,50 +432,104 @@ public sealed class DrumVisual : Grid, IAnimated
         _rpm += (_targetRpm - _rpm) * k;
         _level += (_targetLevel - _level) * ke;
 
-        if (Math.Abs(_rpm) > 0.01)
-            _angle = (_angle + _rpm * 6.0 * dt) % 360.0;
-        _rotor.Angle = _angle;
-
-        double pulse = 0.5 + 0.5 * Math.Sin(time * 1.7);
-        _glow.Opacity = 0.14 + 0.42 * _energy * (0.72 + 0.28 * pulse);
-
-        // Ruhende Maschine: der Kreis atmet sanft als "Bereit"-Anzeige. Der Haken fuer
-        // einen abgeschlossenen Lauf ("Fertig") pulsiert deutlicher und erscheint nur dort.
-        double beat = _completionVisible ? (0.55 + 0.45 * Math.Sin(time * 1.90))
-                                           : (0.34 + 0.20 * Math.Sin(time * 1.05));
-        double readyTarget = _readyVisible ? beat : 0.0;
+        double readyTarget = _readyVisible
+            ? (_completionVisible ? ReadyFinishedOpacity : ReadyIdleOpacity)
+            : 0.0;
         _readyOpacity += (readyTarget - _readyOpacity) * ke;
-        _readyGlow.Opacity = _readyOpacity * 0.32;
-        _readyRing.Opacity = _readyOpacity * 0.95;
-        _readyTick.Opacity = _completionVisible ? _readyOpacity * 0.92 : 0.0;
 
-        bool settled = _energy < 0.02 && Math.Abs(_targetLevel - _level) < 0.06;
+        // Snapped: das exponentielle Annaeern endet exakt. Ohne diesen Schnitt wuerde die Kurve
+        // endlos weiterschleichen und pro Frame neue Pixel erzeugen -> dauerhafter Blur-Repaint.
+        if (Math.Abs(_targetEnergy - _energy) < EnergySnap) _energy = _targetEnergy;
+        if (Math.Abs(_targetRpm - _rpm) < RpmSnap) _rpm = _targetRpm;
+        if (Math.Abs(_targetLevel - _level) < LevelSnap) _level = _targetLevel;
+        if (Math.Abs(readyTarget - _readyOpacity) < OpacitySnap) _readyOpacity = readyTarget;
+
+        bool settled = _energy == _targetEnergy
+                    && _rpm == _targetRpm
+                    && _level == _targetLevel
+                    && _readyOpacity == readyTarget;
+
+        // Zeichenarbeit gibt es nur, wenn die Maschine wirklich laeuft (energiebasiert und
+        // nicht zustandsraten): eine ruhende Trommel baut keine Geometrie mehr.
+        bool working = _energy > WorkEnergy;
+
+        // Drehende Trommel: nur bei echter Drehzahl und nur in sichtbaren Winkelschritten.
+        if (Math.Abs(_rpm) > RestRpm)
+        {
+            _angle = (_angle + _rpm * 6.0 * dt) % 360.0;
+            if (Math.Abs(_angle - _appliedAngle) >= AngleStep)
+            {
+                _appliedAngle = _angle;
+                _rotor.Angle = _angle;
+            }
+        }
+
+        // Glow: pulsieren nur bei arbeitender Maschine, im Ruhezustand steht das Leuchten still.
+        double pulse = working ? (0.72 + 0.28 * Math.Sin(time * 1.7)) : 0.72;
+        SetQuantizedOpacity(_glow, 0.14 + 0.42 * _energy * pulse, ref _glowApplied);
+
+        // Bereit-/Fertig-Anzeige ist statisch (kein Puls, kein Atmen): jeder noch so kleine
+        // Opacity-Schub wuerde die Glasscheibe neu zeichnen und den Acryl-Shader ausloesen.
+        SetQuantizedOpacity(_readyGlow, _readyOpacity * 0.32, ref _readyGlowApplied);
+        SetQuantizedOpacity(_readyRing, _readyOpacity * 0.95, ref _readyRingApplied);
+        SetQuantizedOpacity(_readyTick, _completionVisible ? _readyOpacity * 0.92 : 0.0, ref _readyTickApplied);
 
         if (_isWasher)
         {
-            if (settled && _surfaceBuilt)
+            if (working || !settled)
             {
-                // Ruhezustand: Wasser bleibt stehen, Geometrie wird nicht mehr neu gebaut.
-            }
-            else
-            {
+                // Wasser in Bewegung: Wellengeometrie entsteht pro Frame neu.
                 _surface.Data = BuildSurface(time, _energy);
-                _surfaceBuilt = true;
+                _surfaceFrozen = false;
+            }
+            else if (!_surfaceFrozen)
+            {
+                // Zurueck zur Ruhe: genau EINE stehende Wasserflaeche bauen (Zeitphase fest 0),
+                // danach wird diese Geometrie nie wieder angefasst.
+                _surface.Data = BuildSurface(0.0, _energy);
+                _surfaceFrozen = true;
             }
         }
-        else
+        else if (working || !settled)
         {
             for (int i = 0; i < _heatBands.Length; i++)
             {
                 double bandEnergy = _energy * (0.55 + 0.45 * Math.Sin(time * (1.15 + i * 0.42) + i));
                 bandEnergy = Math.Max(0.0, bandEnergy);
-                _heatBands[i].Opacity = bandEnergy * (i == 1 ? 0.95 : 0.72);
+
+                SetQuantizedOpacity(_heatBands[i], bandEnergy * (i == 1 ? 0.95 : 0.72), ref _heatApplied[i]);
+
                 if (bandEnergy > 0.02)
                     _heatBands[i].Data = BuildHeatBand(time, i);
             }
+
+            _heatFrozen = false;
+        }
+        else if (!_heatFrozen)
+        {
+            // Ruhe des Trockners: Baender aus, keine Geometrie mehr, kein Frame-Churn.
+            for (int i = 0; i < _heatBands.Length; i++)
+                SetQuantizedOpacity(_heatBands[i], 0.0, ref _heatApplied[i]);
+
+            _heatFrozen = true;
         }
 
-        UpdateParticles(dt);
+        _liveParticles = working ? UpdateParticles(dt) : ClearParticles();
+
+        _animating = working || !settled || _liveParticles > 0;
+    }
+
+    /// <summary>
+    /// Schreibt eine Deckkraft nur, wenn sich der quantisierte Wert wirklich aendert.
+    /// Identische Schreibzugriffe (auch "nur ein bisschen") wuerden das Fenster neu zeichnen.
+    /// </summary>
+    private static void SetQuantizedOpacity(FrameworkElement view, double value, ref double last)
+    {
+        double quantized = Math.Round(Math.Clamp(value, 0.0, 1.0) * OpacityLevels) / OpacityLevels;
+        if (quantized == last) return;
+
+        last = quantized;
+        view.Opacity = quantized;
     }
 
     // ---------------- Geometrie: Sinus-Wasserwelle ----------------
@@ -571,9 +694,10 @@ public sealed class DrumVisual : Grid, IAnimated
         }
     }
 
-    private void UpdateParticles(double dt)
+    private int UpdateParticles(double dt)
     {
         double spawnChance = _energy * dt * (_isWasher ? 3.4 : 5.2);
+        int live = 0;
 
         for (int i = 0; i < _particles.Count; i++)
         {
@@ -583,6 +707,7 @@ public sealed class DrumVisual : Grid, IAnimated
             {
                 Respawn(ref p, 0.0);
                 _particles[i] = p;
+                live++;
                 continue;
             }
 
@@ -594,7 +719,10 @@ public sealed class DrumVisual : Grid, IAnimated
                 p.Life = p.MaxLife;
 
                 if (Random.Shared.NextDouble() < spawnChance)
+                {
                     Respawn(ref p, 0.0);
+                    live++;
+                }
             }
             else
             {
@@ -618,10 +746,39 @@ public sealed class DrumVisual : Grid, IAnimated
 
                 Canvas.SetLeft(p.View, p.X - p.R);
                 Canvas.SetTop(p.View, p.Y - p.R);
+
+                live++;
             }
 
             _particles[i] = p;
         }
+
+        return live;
+    }
+
+    /// <summary>
+    /// Ruhestand: alle Partikel ein einziges Mal ausblenden und "verbraucht" stellen.
+    /// Ab jetzt bewegt sich nichts mehr - der Frame-Loop kann abkoppeln, die GPU bleibt bei 0 %.
+    /// </summary>
+    private int ClearParticles()
+    {
+        for (int i = 0; i < _particles.Count; i++)
+        {
+            Particle p = _particles[i];
+
+            if (p.Life < p.MaxLife)
+            {
+                p.Life = p.MaxLife;
+
+                // Diff-Check: ein unsichtbarer Partikel wird nicht noch einmal "ausgeblendet".
+                if (p.View.Opacity != 0.0)
+                    p.View.Opacity = 0.0;
+
+                _particles[i] = p;
+            }
+        }
+
+        return 0;
     }
 
     private void Respawn(ref Particle p, double progressOffset)

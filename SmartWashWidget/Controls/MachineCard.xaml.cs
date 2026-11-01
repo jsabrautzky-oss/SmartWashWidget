@@ -12,15 +12,35 @@ namespace SmartWashWidget.Controls;
 
 public partial class MachineCard : UserControl, IAnimated
 {
+    /// <summary>
+    /// Quantisierung des Fortschrittsbalkens (1/512 ~ 0,2 %): geschrieben wird nur bei echter
+    /// Aenderung. Ein Balken, der pro Frame "ein bisschen" breiter wird, wuerde das transparente
+    /// Fenster bei jedem Frame neu zeichnen und die GPU zwingen, den Acryl-Blur neu zu rechnen.
+    /// </summary>
+    private const double ProgressLevels = 512.0;
+
+    /// <summary>Abhalb dieser Restdistanz gilt der Balken als am Ziel (Annaehern endet exakt).</summary>
+    private const double ProgressSnap = 0.0004;
+
+    /// <summary>Textabgleich im animierten Betrieb: 2 Hz reichen fuer mitlaufende Prozentwerte.</summary>
+    private const double TextEverySec = 0.5;
+
+    private static readonly SolidColorBrush PillPaused = Frozen(Color.FromArgb(0x22, 0xFF, 0xC5, 0x3D));
+    private static readonly SolidColorBrush PillFinished = Frozen(Color.FromArgb(0x22, 0x4C, 0xD9, 0x64));
+    private static readonly SolidColorBrush PillIdle = Frozen(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+    private static readonly SolidColorBrush PillOffline = Frozen(Color.FromArgb(0x26, 0xFF, 0x6B, 0x6B));
+
     private readonly MachineKind _kind;
     private readonly DrumVisual _drum;
     private readonly Color _accentColor;
     private readonly SolidColorBrush _accent;
     private readonly SolidColorBrush _accentSoft;
+    private readonly SolidColorBrush _pillRunning;
 
     private double _displayProgress;
     private double _targetProgress;
-    private double _textAccum = 1.0;
+    private bool _progressAtRest = true;
+    private double _textAccum;
 
     private MachineSnapshot _snap = MachineSnapshot.Idle(MachineKind.Washer);
     private string _setupHint = string.Empty;
@@ -37,8 +57,10 @@ public partial class MachineCard : UserControl, IAnimated
 
         _accent = new SolidColorBrush(_accentColor);
         _accentSoft = new SolidColorBrush(Color.FromArgb(0x88, _accentColor.R, _accentColor.G, _accentColor.B));
+        _pillRunning = new SolidColorBrush(Color.FromArgb(0x2E, _accentColor.R, _accentColor.G, _accentColor.B));
         _accent.Freeze();
         _accentSoft.Freeze();
+        _pillRunning.Freeze();
 
         _snap = MachineSnapshot.Idle(kind);
 
@@ -73,16 +95,32 @@ public partial class MachineCard : UserControl, IAnimated
     public MachineKind Kind => _kind;
     public DrumVisual Drum => _drum;
 
+    /// <summary>Balken in Bewegung oder Trommel zeichnend -> diese Karte braucht Frames.</summary>
+    public bool NeedsFrames => !_progressAtRest || _drum.NeedsFrames;
+
+    /// <summary>Die Karte selbst veraendert nur den Balken; die Trommel entscheidet mit.</summary>
+    public bool AnimatesVisual => NeedsFrames;
+
     // ---------------- Eingaben ----------------
 
     public void ApplySnapshot(MachineSnapshot snap)
     {
         _snap = snap;
         _statusMessage = snap.StatusMessage;
-        _targetProgress = Math.Clamp(snap.Progress, 0.0, 1.0);
+
+        double target = Math.Clamp(snap.Progress, 0.0, 1.0);
+        if (target != _targetProgress)
+        {
+            _targetProgress = target;
+            _progressAtRest = false;   // der Balken bewegt sich wieder
+        }
+
         _drum.ApplyState(snap);
         UpdateStatusVisual();
-        _textAccum = 1.0; // Statuswechsel sofort sichtbar
+
+        // Snapshots sind der einzige Treiber der Anzeige (es gibt keinen lokalen Sekundenzaehler):
+        // Texte werden deshalb sofort und ausschliesslich diff-geprueft gesetzt.
+        UpdateTexts();
     }
 
     public void SetSetupHint(string hint)
@@ -100,7 +138,7 @@ public partial class MachineCard : UserControl, IAnimated
         _setupHint = LocalizationManager.Relocalize(_setupHint, previousLanguage);
         _statusMessage = LocalizationManager.Relocalize(_statusMessage, previousLanguage);
 
-        DeviceName.Text = LocalizationManager.DeviceName(_kind);
+        SetText(DeviceName, LocalizationManager.DeviceName(_kind));
         UpdateStatusVisual();
         UpdateTexts();
     }
@@ -109,17 +147,29 @@ public partial class MachineCard : UserControl, IAnimated
 
     public void Animate(double dt, double time)
     {
-        // Fortschritt wird Glaettet, damit die Balken nie ruckartig springen
-        double k = 1.0 - Math.Exp(-dt * 2.6);
-        _displayProgress += (_targetProgress - _displayProgress) * k;
-        Progress.Value = _displayProgress;
-
-        // Texte nur ~4x pro Sekunde neu setzen: spart Layout und verhindert Flackern
-        _textAccum += dt;
-        if (_textAccum >= 0.25)
+        if (!_progressAtRest)
         {
-            _textAccum = 0;
-            UpdateTexts();
+            // Fortschritt wird geglaettet, damit die Balken nie ruckartig springen.
+            double k = 1.0 - Math.Exp(-dt * 2.6);
+            _displayProgress += (_targetProgress - _displayProgress) * k;
+
+            if (Math.Abs(_targetProgress - _displayProgress) < ProgressSnap)
+                _displayProgress = _targetProgress;
+
+            double quantized = Math.Round(Math.Clamp(_displayProgress, 0.0, 1.0) * ProgressLevels) / ProgressLevels;
+
+            if (quantized != Progress.Value)
+                Progress.Value = quantized;
+
+            // Mitlaufende Prozentanzeige, aber nur 2 Hz und nur, solange der Balken wandert.
+            _textAccum += dt;
+            if (_textAccum >= TextEverySec || _displayProgress == _targetProgress)
+            {
+                _textAccum = 0;
+                UpdateTexts();
+            }
+
+            _progressAtRest = _displayProgress == _targetProgress && quantized == Progress.Value;
         }
 
         _drum.Animate(dt, time);
@@ -132,71 +182,69 @@ public partial class MachineCard : UserControl, IAnimated
         switch (_snap.RunState)
         {
             case MachineRunState.Running:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Running");
-                StatusDot.Fill = _accent;
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x2E, _accentColor.R, _accentColor.G, _accentColor.B));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Running"));
+                SetFill(StatusDot, _accent);
+                SetBackground(StatusPill, _pillRunning);
                 break;
 
             case MachineRunState.Paused:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Paused");
-                StatusDot.Fill = FindBrush("WarnBrush");
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x22, 0xFF, 0xC5, 0x3D));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Paused"));
+                SetFill(StatusDot, FindBrush("WarnBrush"));
+                SetBackground(StatusPill, PillPaused);
                 break;
 
             case MachineRunState.Finished:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Finished");
-                StatusDot.Fill = FindBrush("OkBrush");
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x22, 0x4C, 0xD9, 0x64));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Finished"));
+                SetFill(StatusDot, FindBrush("OkBrush"));
+                SetBackground(StatusPill, PillFinished);
                 break;
 
             case MachineRunState.Idle:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Idle");
-                StatusDot.Fill = FindBrush("TextTertiaryBrush");
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Idle"));
+                SetFill(StatusDot, FindBrush("TextTertiaryBrush"));
+                SetBackground(StatusPill, PillIdle);
                 break;
 
             case MachineRunState.Unreachable:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Offline");
-                StatusDot.Fill = FindBrush("ErrBrush");
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0x6B, 0x6B));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Offline"));
+                SetFill(StatusDot, FindBrush("ErrBrush"));
+                SetBackground(StatusPill, PillOffline);
                 break;
 
             default:
-                StatusText.Text = LocalizationManager.Get("Str_Status_Unknown");
-                StatusDot.Fill = FindBrush("TextTertiaryBrush");
-                StatusPill.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
+                SetText(StatusText, LocalizationManager.Get("Str_Status_Unknown"));
+                SetFill(StatusDot, FindBrush("TextTertiaryBrush"));
+                SetBackground(StatusPill, PillIdle);
                 break;
         }
-
-        StatusPill.Background.Freeze();
     }
 
     private void UpdateTexts()
     {
-        TimeText.Text = FormatRemaining(_snap.Remaining);
+        SetText(TimeText, FormatRemaining(_snap.Remaining));
 
         // Die Phase kommt als ASCII-Code aus dem Snapshot und wird hier uebersetzt.
-        PhaseText.Text = LocalizationManager.PhaseName(_snap.Phase);
+        SetText(PhaseText, LocalizationManager.PhaseName(_snap.Phase));
 
         // Der Prozentwert folgt dem geglaetteten Balken, nie dem rohen API-Wert.
         int percent = (int)Math.Round(Math.Clamp(_displayProgress, 0.0, 1.0) * 100.0);
-        PercentText.Text = LocalizationManager.Format("Str_Fmt_Percent", percent);
+        SetText(PercentText, LocalizationManager.Format("Str_Fmt_Percent", percent));
 
         string deviceName = LocalizationManager.DeviceName(_kind);
-        DeviceName.Text = deviceName;
+        SetText(DeviceName, deviceName);
 
         if (_snap.IsLive)
         {
             string label = string.IsNullOrWhiteSpace(_snap.DeviceLabel) ? deviceName : _snap.DeviceLabel;
-            DeviceSub.Text = LocalizationManager.Format("Str_Fmt_SubSmartThings", label);
+            SetText(DeviceSub, LocalizationManager.Format("Str_Fmt_SubSmartThings", label));
         }
         else if (_snap.IsError)
         {
-            DeviceSub.Text = deviceName;
+            SetText(DeviceSub, deviceName);
         }
         else
         {
-            DeviceSub.Text = LocalizationManager.Format("Str_Fmt_SubDemo", deviceName);
+            SetText(DeviceSub, LocalizationManager.Format("Str_Fmt_SubDemo", deviceName));
         }
 
         // Hinweiszeile: ein echtes Device-Problem schlagen, sonst der Einrichtungs-/Demohinweis.
@@ -225,8 +273,46 @@ public partial class MachineCard : UserControl, IAnimated
             hint = string.Empty;
         }
 
-        HintText.Foreground = problem ? FindBrush("ErrBrush") : FindBrush("TextTertiaryBrush");
-        HintText.Text = string.IsNullOrWhiteSpace(hint) ? LocalizationManager.Get("Str_Hint_Connected") : hint;
+        SetForeground(HintText, problem ? FindBrush("ErrBrush") : FindBrush("TextTertiaryBrush"));
+        SetText(HintText, string.IsNullOrWhiteSpace(hint) ? LocalizationManager.Get("Str_Hint_Connected") : hint);
+    }
+
+    // ---------------- Diff-Check-Helfer ----------------
+    //
+    // Jeder Schreibzugriff auf Text, Fuellung oder Wert erzeugt ein Neuzeichnen der
+    // Fensterflaeche. Bei AllowsTransparency + DWM-Acryl-Blur bedeutet das: die GPU berechnet
+    // den Blur-Shader ueber der ganzen Glasscheibe neu. Deshalb wird NUR geschrieben, wenn sich
+    // der Wert gegenueber dem vorherigen Anzeigestand tatsaechlich geaendert hat.
+
+    private static void SetText(TextBlock view, string text)
+    {
+        if (view.Text == text) return;
+        view.Text = text;
+    }
+
+    private static void SetFill(Shape view, Brush brush)
+    {
+        if (brush is null || ReferenceEquals(view.Fill, brush)) return;
+        view.Fill = brush;
+    }
+
+    private static void SetBackground(Border view, Brush brush)
+    {
+        if (brush is null || ReferenceEquals(view.Background, brush)) return;
+        view.Background = brush;
+    }
+
+    private static void SetForeground(TextBlock view, Brush brush)
+    {
+        if (brush is null || ReferenceEquals(view.Foreground, brush)) return;
+        view.Foreground = brush;
+    }
+
+    private static SolidColorBrush Frozen(Color color)
+    {
+        SolidColorBrush brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>Restzeit als "hh:mm h" - die Einheit kommt aus dem aktiven Sprachvorrat.</summary>
