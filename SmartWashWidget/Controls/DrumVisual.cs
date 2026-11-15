@@ -126,7 +126,8 @@ public sealed class DrumVisual : Grid, IAnimated
     private int _liveParticles;
 
     // Zuletzt geschriebene (quantisierte) Werte - mehrfache identische Schreibzugriffe gibt es nicht.
-    private double _appliedAngle = double.NaN;
+    // DerRotor beginnt bei 0 Grad; NaN waere bei der Winkel-Diff-Pruefung ein Dauerblocker.
+    private double _appliedAngle = 0.0;
     private double _glowApplied = double.NaN;
     private double _readyGlowApplied = double.NaN;
     private double _readyRingApplied = double.NaN;
@@ -457,7 +458,13 @@ public sealed class DrumVisual : Grid, IAnimated
         if (Math.Abs(_rpm) > RestRpm)
         {
             _angle = (_angle + _rpm * 6.0 * dt) % 360.0;
-            if (Math.Abs(_angle - _appliedAngle) >= AngleStep)
+
+            // Der kuerzeste Winkelabstand zur zuletzt gesetzten Position - sonst wuerde ein
+            // Ueberlauf von 359 Grad nach 0 Grad als riesiger Sprung gesehen.
+            double delta = Math.Abs(_angle - _appliedAngle);
+            if (delta > 180.0) delta = 360.0 - delta;
+
+            if (delta >= AngleStep)
             {
                 _appliedAngle = _angle;
                 _rotor.Angle = _angle;
