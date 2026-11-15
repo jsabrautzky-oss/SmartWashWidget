@@ -584,9 +584,22 @@ public sealed class SmartThingsClient : IDisposable
             reportedMinutes = reportedClock.Value.TotalMinutes;
 
         MachineRunState state = MapMachineState(rawState);
-        tracker.NoteState(state);
 
         DateTimeOffset? completion = ParseIso8601(rawCompletion);
+
+        // CompletionTime ist das eindeutige Programmende. Die Maschine kann physisch noch
+        // eingeschaltet sein; der Gang ist dann aber beendet. Wenn completionTime erreicht
+        // ist, stoppt die Trommel weich und die Restzeit wird auf 00:00 gesetzt.
+        string rawJobKey = (rawJob ?? string.Empty).Trim().ToLowerInvariant()
+            .Replace("_", string.Empty).Replace("-", string.Empty);
+        bool completionReached = completion is not null && completion.Value <= DateTimeOffset.UtcNow;
+        bool jobSaysFinished = rawJobKey is "finish" or "completed" or "done";
+
+        if ((completionReached || jobSaysFinished) && state is MachineRunState.Running or MachineRunState.Unknown)
+            state = MachineRunState.Finished;
+
+        tracker.NoteState(state);
+
         TimeSpan? remaining = null;
 
         if (state == MachineRunState.Running || state == MachineRunState.Paused)
@@ -599,15 +612,22 @@ public sealed class SmartThingsClient : IDisposable
                 fromCompletion = diff;
             }
 
-            // Die gemeldete Restzeit ist vertrauenswuerdiger als ein eventuell veralteter completionTime-Stempel.
+            // CompletionTime ist das definitive Programmende. Die gemeldete Restzeit wird
+            // dagegen abgesichert, damit ein veralteter 00:01-Wert nicht haengengeblieben ist.
             if (reportedMinutes is not null && reportedMinutes.Value >= 0.0)
             {
-                remaining = TimeSpan.FromMinutes(Math.Round(reportedMinutes.Value));
+                TimeSpan reportedRemaining = TimeSpan.FromSeconds(Math.Round(reportedMinutes.Value * 60.0, MidpointRounding.ToEven));
 
-                if (fromCompletion is not null &&
-                    Math.Abs(remaining.Value.TotalMinutes - fromCompletion.Value.TotalMinutes) > 3.0)
+                if (fromCompletion is not null && fromCompletion.Value <= reportedRemaining)
                 {
-                    completion = DateTimeOffset.UtcNow + remaining.Value;
+                    remaining = fromCompletion;
+                }
+                else
+                {
+                    remaining = reportedRemaining;
+
+                    if (fromCompletion is not null)
+                        completion = DateTimeOffset.UtcNow + reportedRemaining;
                 }
             }
             else
@@ -647,6 +667,20 @@ public sealed class SmartThingsClient : IDisposable
 
         if (state == MachineRunState.Running && remaining is not null && remaining.Value <= TimeSpan.FromSeconds(20))
             state = MachineRunState.Finished;
+
+        // Normalisiert fuer die Anzeige: fertig oder bereit zeigt keine haeugende Restzeit.
+        if (state == MachineRunState.Finished)
+        {
+            remaining = TimeSpan.Zero;
+            progress = 1.0;
+            completion = DateTimeOffset.UtcNow;
+        }
+        else if (state == MachineRunState.Idle)
+        {
+            remaining = TimeSpan.Zero;
+            progress = 0.0;
+            completion = DateTimeOffset.UtcNow;
+        }
 
         // Phasen stehen als ASCII-Codes im Snapshot; uebersetzt wird erst bei der Anzeige (MachineCard).
         string phase = state switch

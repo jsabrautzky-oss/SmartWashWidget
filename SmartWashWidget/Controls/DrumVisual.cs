@@ -333,7 +333,7 @@ public sealed class DrumVisual : Grid, IAnimated
                 break;
 
             case MachineRunState.Finished:
-                _targetEnergy = 0.10;
+                _targetEnergy = 0.0;
                 _targetRpm = 0.0;
                 _targetLevel = 8.0;
                 _readyVisible = true;
@@ -341,7 +341,7 @@ public sealed class DrumVisual : Grid, IAnimated
                 break;
 
             case MachineRunState.Idle:
-                _targetEnergy = 0.06;
+                _targetEnergy = 0.0;
                 _targetRpm = 0.0;
                 _targetLevel = 6.0;
                 _readyVisible = true;
@@ -349,7 +349,7 @@ public sealed class DrumVisual : Grid, IAnimated
                 break;
 
             case MachineRunState.Unreachable:
-                _targetEnergy = 0.03;
+                _targetEnergy = 0.0;
                 _targetRpm = 0.0;
                 _targetLevel = 4.0;
                 _readyVisible = false;
@@ -357,7 +357,7 @@ public sealed class DrumVisual : Grid, IAnimated
                 break;
 
             default:
-                _targetEnergy = 0.06;
+                _targetEnergy = 0.0;
                 _targetRpm = 0.0;
                 _targetLevel = 4.0;
                 _readyVisible = true;
